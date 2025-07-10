@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import faculty from '../fixtures/facultyFixtures.js'; // Adjust the path as necessary
 const router = express.Router();
-const faculty = require('../fixtures/facultyFixtures');
+
 
 // GET /api/faculty
 router.get('/', (req, res) => {
