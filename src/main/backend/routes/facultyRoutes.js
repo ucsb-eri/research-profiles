@@ -1,7 +1,20 @@
 import express from 'express';
-import faculty from '../fixtures/facultyFixtures.js'; // Adjust the path as necessary
+import faculty from '../fixtures/facultyFixtures.js'; 
+import facultyController from '../controllers/facultyController.js';
 const router = express.Router();
 
+// database queries
+
+router.get('/', facultyController.getAll);
+router.get('/:id', facultyController.getById);
+router.get('/name', facultyController.getByName);
+router.get('/department', facultyController.getByDepartment);
+router.get('/topic', facultyController.getByTopic);
+router.get('/dept-topic', facultyController.getAllbyDeptTopic);
+
+module.exports = router;
+
+//mock backend endpoints using faculty fixtures
 
 // GET /api/faculty
 router.get('/', (req, res) => {
@@ -40,7 +53,7 @@ router.get('/:id', (req, res) => {
   res.json(prof);
 });
 
-// GET /api/faculty/name
+GET /api/faculty/name
 router.get('/name', (req, res) => {
   const { query } = req.query;
   const prof = faculty.find(f => f.name.toLowerCase().includes(query.toLowerCase()));
@@ -52,7 +65,7 @@ router.get('/name', (req, res) => {
   res.json(prof);
 });
 
-
 module.exports = router;
+
 
 
