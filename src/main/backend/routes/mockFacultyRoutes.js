@@ -1,3 +1,7 @@
+import express from 'express';
+import faculty from '../fixtures/facultyFixtures.js'; 
+const router = express.Router();
+
 //mock backend endpoints using faculty fixtures
 
 // GET /api/faculty
@@ -48,3 +52,5 @@ router.get('/name', (req, res) => {
 
   res.json(prof);
 });
+
+export default router;
