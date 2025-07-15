@@ -36,10 +36,12 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
 
       for (let line of lines.slice(1)) {
         if (line.includes('Professor')) {
-          title = line;
-          // Remove anything in parentheses as specialization
-          const specMatch = line.match(/\((.*?)\)/);
-          specialization = specMatch ? specMatch[1] : null;
+          // Extract specialization inside parentheses
+            const specMatch = line.match(/\((.*?)\)/);
+            specialization = specMatch ? specMatch[1] : null;
+
+            // Remove the parentheses and content from the title
+            title = line.replace(/\s*\(.*?\)\s*/g, '').trim();
         } else if (line.includes('@') && !email) {
           email = line;
         } else if (/Arts|Elings/.test(line)) {
@@ -49,6 +51,12 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
         } else if (!specialization) {
           specialization = line;
         }
+      }
+      // Special case for Moulton (weird HTML formatting)
+      if (email=='moulton@arts.ucsb.edu'){
+        title = "Professor";
+        specialization = "Video, Performance, Installation";
+        website = "https://www.arts.ucsb.edu/faculty/moulton/";
       }
 
       faculty.push({
