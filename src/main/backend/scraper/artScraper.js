@@ -14,7 +14,13 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
     const hasFacultyKeywords = /Professor|Lecturer|Teaching/.test(textContent);
 
     if (links.length && hasFacultyKeywords) {
-      const name = $(links[0]).text().trim();
+        let name;
+        if ($(links[0]).text().trim() !== 'moulton@arts.ucsb.edu') {
+  name = $(links[0]).text().trim();
+        } else {
+            name = "Shana Moulton"; // Special case for Moulton
+        }
+    
       let website = $(links[0]).attr('href') || null;
 
       // Fix relative URLs
