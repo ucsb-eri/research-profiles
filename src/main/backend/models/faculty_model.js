@@ -1,4 +1,33 @@
-import db from '../config/db.js';
+import db from '../config/db_config.js';
+
+//insert faculty into db
+
+export const insertFaculty = async (faculty) => {
+  const {
+    Name: name,
+    'Title(s)': title,
+    Specialization: specialization,
+    Email: email,
+    Phone: phone,
+    Office: office,
+    Website: website,
+    'Photo URL': photo_url,
+    Department: department,
+    Topics: topics = null // optional, depending on schema
+  } = faculty;
+
+  await db.query(
+    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, department, topics)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (email) DO NOTHING`,
+    [name, title, specialization, email, phone, office, website, photo_url, department, topics]
+  );
+};
+
+
+
+
+//GETS
 
 export const getAll = async () => {
   const res = await db.query('SELECT * FROM faculty');
