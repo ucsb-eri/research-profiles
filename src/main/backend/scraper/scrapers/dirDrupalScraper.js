@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { load } from 'cheerio';
 import { URL } from 'url';
@@ -6,15 +5,15 @@ import { URL } from 'url';
 /**
  * Generic scraper for UCSB departments using Drupal directory layout.
  * @param {string} url - Full URL to the department faculty page
+ * @param {string} departmentName - Department name to label entries
  * @returns {Promise<Array<Object>>}
  */
-export async function scrapeDrupalDirectory(url) {
+export async function scrapeDrupalDirectory(url, departmentName) {
   const res = await axios.get(url);
   const $ = load(res.data);
   const facultyData = [];
 
   const baseUrl = new URL(url).origin;
-  const departmentName = url.split('/')[2].split('.')[0].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   $('div.view-content div.views-row').each((_, el) => {
     const $block = $(el);
@@ -26,7 +25,6 @@ export async function scrapeDrupalDirectory(url) {
 
     if (!second.length) return;
 
-    // Name and profile URL
     const nameElem = second.find('h3 a');
     if (!nameElem.length) return;
 
@@ -34,7 +32,7 @@ export async function scrapeDrupalDirectory(url) {
     let profileUrl = nameElem.attr('href');
     if (profileUrl?.startsWith('/')) profileUrl = baseUrl + profileUrl;
 
-    // Title (brute force, after <h3>)
+    // Title extraction
     let title = null;
     const h3 = second.find('h3');
     let current = h3[0]?.nextSibling;

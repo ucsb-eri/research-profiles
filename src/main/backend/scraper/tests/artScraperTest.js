@@ -1,4 +1,4 @@
-import scrapeArtFaculty from '../artScraper.js';
+import scrapeArtFaculty from '../scrapers/artScraper.js';
 
 async function test() {
   try {
