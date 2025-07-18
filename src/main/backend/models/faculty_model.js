@@ -4,16 +4,16 @@ import db from '../config/db_config.js';
 
 export const insertFaculty = async (faculty) => {
   const {
-    Name: name,
-    'Title(s)': title,
-    Specialization: specialization,
-    Email: email,
-    Phone: phone,
-    Office: office,
-    Website: website,
-    'Photo URL': photo_url,
-    Department: department,
-    Topics: topics = null // optional, depending on schema
+    name: name,
+    title: title,
+    specialization: specialization,
+    email: email,
+    phone: phone,
+    office: office,
+    website: website,
+    photo_url: photo_url,
+    department: department,
+    topics: topics = null // optional, depending on schema
   } = faculty;
 
   await db.query(
