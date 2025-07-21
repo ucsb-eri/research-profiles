@@ -23,9 +23,9 @@ const getById = async (req, res) => {
 };
 
 const getByName = async (req, res) => {
-  const { query } = req.query;
+  const { name } = req.query;
   try {
-    const facultyMembers = await faculty_model.getByName(query);
+    const facultyMembers = await faculty_model.getByName(name);
     if (facultyMembers.length === 0) {
       return res.status(404).json({ error: 'Faculty member not found' });
     }
