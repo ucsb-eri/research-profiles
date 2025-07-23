@@ -1,8 +1,16 @@
 import axios from 'axios';
 import {load} from 'cheerio';
 
-async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') {
-  const res = await axios.get(baseUrl);
+
+/**
+ * Generic scraper for UCSB departments using Drupal directory layout.
+ * @param {string} url - Full URL to the department faculty page
+ * @param {string} departmentName - Department name to label entries
+ * @returns {Promise<Array<Object>>}
+ */
+
+async function artScraper(url, departmentName) {
+  const res = await axios.get(url);
   const $ = load(res.data);
   const faculty = [];
 
@@ -25,7 +33,7 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
 
       // Fix relative URLs
       if (website && !website.startsWith('http')) {
-        website = baseUrl.replace(/\/+$/, '') + '/' + website.replace(/^\/+/, '');
+        website = url.replace(/\/+$/, '') + '/' + website.replace(/^\/+/, '');
       }
       if (website && !website.endsWith('/')) website += '/';
 
@@ -74,7 +82,9 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
         office,
         website,
         photo_url: null, // Not available on this page
-        department: 'Art'
+        research_areas: null,
+        department: departmentName,
+        profile_url: null
       });
     }
   });
@@ -82,4 +92,4 @@ async function scrapeArtFaculty(baseUrl = 'https://www.arts.ucsb.edu/faculty/') 
   return faculty;
 }
 
-export default scrapeArtFaculty;
+export default artScraper;

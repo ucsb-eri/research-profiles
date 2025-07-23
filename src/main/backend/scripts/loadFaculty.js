@@ -1,5 +1,7 @@
 import { scrapeDrupalGeneral} from '../scraper/scrapers/genDrupalScraper.js';
 import { scrapeDrupalDirectory } from '../scraper/scrapers/dirDrupalScraper.js';
+import { artScraper } from '../scraper/scrapers/artScraper.js';
+import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 
@@ -44,7 +46,25 @@ const scrapingJobs = [
     url: 'https://www.ece.ucsb.edu/people/faculty',
     scraper: scrapeDrupalDirectory,
     department: 'Electrical and Computer Engineering'
+  },
+  //not added to database yet
+  {
+    url: 'https://www.arts.ucsb.edu/faculty/',
+    scraper: artScraper,
+    department: 'Art'
+  },
+  {
+    url: 'https://www.anth.ucsb.edu/people/academic',
+    scraper: scrapeAnthropologyFaculty,
+    department: 'Anthropology'
+
+  },
+  {
+    url: 'https://www.asamst.ucsb.edu/people',
+    scraper: scrapeAnthropologyFaculty,
+    department: 'Asian American Studies'
   }
+
 ];
 
 async function main() {
