@@ -40,8 +40,9 @@ export async function scrapeAnthropologyFaculty(url, department) {
         website,
         photo_url: photoUrl,
         research_areas: null, // Not available on this page
-        profile_url: website, // Use website as profile URL
         department: department,
+        profile_url: website // Use website as profile URL
+        
       });
     });
 

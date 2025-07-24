@@ -4,6 +4,8 @@ import { artScraper } from '../scraper/scrapers/artScraper.js';
 import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
+import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
+import { scrapeEnglishFaculty } from '../scraper/scrapers/englishScraper.js';
 
 const scrapingJobs = [
   {
@@ -63,6 +65,17 @@ const scrapingJobs = [
     url: 'https://www.asamst.ucsb.edu/people',
     scraper: scrapeAnthropologyFaculty,
     department: 'Asian American Studies'
+  },
+  {
+    url: 'https://www.cs.ucsb.edu/people/faculty',
+    scraper: scrapeCSFaculty,
+    department: 'Computer Science'
+  },
+  {
+    url: 'https://www.english.ucsb.edu/people/faculty',
+    scraper: scrapeEnglishFaculty,
+    department: 'English'
+
   }
 
 ];

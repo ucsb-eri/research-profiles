@@ -13,14 +13,15 @@ export const insertFaculty = async (faculty) => {
     website: website,
     photo_url: photo_url,
     department: department,
-    topics: topics = null // optional, depending on schema
+    topics: topics = null, // optional, depending on schema
+    profileurl: profile_url = website // use website as profile URL if not provided
   } = faculty;
 
   await db.query(
-    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, department, topics)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, department, topics, profileurl)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (email) DO NOTHING`,
-    [name, title, specialization, email, phone, office, website, photo_url, department, topics]
+    [name, title, specialization, email, phone, office, website, photo_url, department, topics, profile_url]
   );
 };
 
