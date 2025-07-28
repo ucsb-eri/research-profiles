@@ -20,7 +20,9 @@ export const insertFaculty = async (faculty) => {
   await db.query(
     `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, department, topics, profileurl)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     ON CONFLICT (email) DO NOTHING`,
+     ON CONFLICT (email) DO NOTHING
+     RETURNING id`,
+    // Use ON CONFLICT to avoid duplicates based on email
     [name, title, specialization, email, phone, office, website, photo_url, department, topics, profile_url]
   );
 };
