@@ -16,6 +16,20 @@ export const insertFacultyResearchLinks = async (facultyId, links) => {
   }
 };
 
+//get all faculty research links
+
+export const getAllResearchLinks = async() => {
+    try{
+        const res = await db.query(
+            'SELECT * FROM faculty_research_links'
+        );
+        return res;
+    } catch(err){
+        console.error('Error getting all faculty research links:', err.message);
+        return null;
+    }
+}
+
 // get faculty research links by faculty ID
 export const getFacultyResearchLinksById = async (facultyId) => {
   try {

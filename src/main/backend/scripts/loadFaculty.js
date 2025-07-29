@@ -103,6 +103,7 @@ async function main() {
             try{
                 const links = await gatherResearchLinks(faculty.website);
                 await insertFacultyResearchLinks(faculty_id, links);
+                console.log(`Inserted research links for ${faculty.name}`);
 
             } catch(err){
                 console.error(`Error gathering research links for ${faculty.name}:`, err.message);

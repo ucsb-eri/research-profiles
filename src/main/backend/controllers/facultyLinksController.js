@@ -1,8 +1,8 @@
-import * as facultyLinks_model from '../models/facultyLinksModel.js';
+import * as facultyLinks_model from '../models/facultyLinks_model.js';
 
 const getAllLinks = async (req, res) => {
   try {
-    const facultyLinks = await facultyLinks_model.getAll();
+    const facultyLinks = await facultyLinks_model.getAllResearchLinks();
     res.json(facultyLinks);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch faculty research links' });
