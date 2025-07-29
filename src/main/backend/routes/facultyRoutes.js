@@ -1,58 +1,17 @@
 import express from 'express';
-import faculty from '../fixtures/facultyFixtures.js'; // Adjust the path as necessary
+import facultyController from '../controllers/facultyController.js';
 const router = express.Router();
 
+// database queries
 
-// GET /api/faculty
-router.get('/', (req, res) => {
-  const { department, topic } = req.query;
+router.get('/', facultyController.getAll);
+router.get('/:id', facultyController.getById);
+router.get('/name', facultyController.getByName);
+router.get('/department', facultyController.getByDepartment);
+router.get('/topic', facultyController.getByTopic);
+router.get('/dept-topic', facultyController.getAllbyDeptTopic);
 
-  let result = faculty;
+export default router;
 
-  //filter by dept if field is provided
-  if (department) {
-    result = result.filter(f =>
-      f.department.toLowerCase() === department.toLowerCase()
-    );
-  }
-
-  //filter by topic if field is provided
-  if (topic) {
-    result = result.filter(f =>
-      (f.topics || []).some(t =>
-        t.toLowerCase().includes(topic.toLowerCase())
-      )
-    );
-  }
-  // return the filtered results as JSON obj
-  res.json(result);
-});
-
-// GET /api/faculty/:id
-router.get('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const prof = faculty.find(f => f.id === id);
-
-  if (!prof) {
-    return res.status(404).json({ error: 'Faculty member not found' });
-  }
-
-  res.json(prof);
-});
-
-// GET /api/faculty/name
-router.get('/name', (req, res) => {
-  const { query } = req.query;
-  const prof = faculty.find(f => f.name.toLowerCase().includes(query.toLowerCase()));
-
-  if (!prof) {
-    return res.status(404).json({ error: 'Faculty member not found' });
-  }
-
-  res.json(prof);
-});
-
-
-module.exports = router;
 
 
