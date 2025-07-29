@@ -1,8 +1,9 @@
-import { scrapeDrupalFaculty } from './scrapers/genDrupalScraper.js';
+import { scrapeDrupalGeneral } from '../scrapers/genDrupalScraper.js';
 
-const url = 'https://www.blackstudies.ucsb.edu/people/academic'
+const url = 'https://www.blackstudies.ucsb.edu/people/academic';
+const departmentName = 'Black Studies';
 
-scrapeDrupalFaculty(url).then((facultyList) => {
+scrapeDrupalGeneral(url, departmentName).then((facultyList) => {
   console.log(JSON.stringify(facultyList, null, 2));
+  console.log('Found ' + facultyList.length + ' faculty members.');
 });
-console.log('Found ' + facultyList.length + ' faculty members.');

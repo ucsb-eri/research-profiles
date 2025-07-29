@@ -5,9 +5,10 @@ import { load } from 'cheerio';
 /**
  * Generic scraper for UCSB Drupal-based department faculty pages.
  * @param {string} url - Full faculty page URL
+ * @param {string} departmentName - Name of the department for labeling
  * @returns {Promise<Array<Object>>} - Array of faculty objects
  */
-export async function scrapeDrupalFaculty(url) {
+export async function scrapeDrupalGeneral(url, departmentName) {
   const res = await axios.get(url);
   const $ = load(res.data); //
   const facultyData = [];
@@ -60,6 +61,8 @@ export async function scrapeDrupalFaculty(url) {
       office,
       website,
       photo_url: photoUrl,
+      research_areas: null, // Placeholder for research areas if needed
+      department: departmentName,
       profile_url: profileUrl,
     });
   });
