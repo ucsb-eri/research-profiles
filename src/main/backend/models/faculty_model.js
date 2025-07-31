@@ -13,17 +13,32 @@ export const insertFaculty = async (faculty) => {
     website: website,
     photo_url: photo_url,
     department: department,
-    topics: topics = null, // optional, depending on schema
-    profileurl: profile_url = website // use website as profile URL if not provided
+    research_areas: research_areas = null, // Default to null if not provided
+    profile_url: profile_url = website // use website as profile URL if not provided
   } = faculty;
 
-  await db.query(
-    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, department, topics, profileurl)
+  const result = await db.query(
+    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     ON CONFLICT (email) DO NOTHING`,
-    [name, title, specialization, email, phone, office, website, photo_url, department, topics, profile_url]
+     ON CONFLICT (email) DO NOTHING
+     RETURNING id`,
+    // Use ON CONFLICT to avoid duplicates based on email
+    [name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url]
   );
+
+  if (result.rows.length > 0) {
+    return result.rows[0].id; // inserted
+  }
+
+  // Fetch the existing faculty ID if insert was skipped
+  const existing = await db.query(
+    `SELECT id FROM faculty WHERE email = $1`,
+    [email]
+  );
+
+  return existing.rows[0]?.id ?? null;
 };
+
 
 
 

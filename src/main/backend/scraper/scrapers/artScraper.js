@@ -92,4 +92,4 @@ async function artScraper(url, departmentName) {
   return faculty;
 }
 
-export default artScraper;
+export { artScraper };

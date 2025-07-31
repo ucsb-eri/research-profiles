@@ -6,6 +6,8 @@ import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
 import { scrapeEnglishFaculty } from '../scraper/scrapers/englishScraper.js';
+import { gatherResearchLinks } from '../scraper/scrapers/researchLinkScraper.js';
+import { insertFacultyResearchLinks } from '../models/facultyLinks_model.js';
 
 const scrapingJobs = [
   {
@@ -94,7 +96,20 @@ async function main() {
             console.warn('Skipping faculty with no name:', { name: faculty.name, department: job.department });
             continue; // skip this insert
             }
-        await insertFaculty(faculty);
+        
+        const faculty_id = await insertFaculty(faculty);
+
+        if(faculty.website && faculty.website != faculty.profile_url){
+            try{
+                const links = await gatherResearchLinks(faculty.website);
+                await insertFacultyResearchLinks(faculty_id, links);
+                console.log(`Inserted research links for ${faculty.name}`);
+
+            } catch(err){
+                console.error(`Error gathering research links for ${faculty.name}:`, err.message);
+            }
+
+        } 
       }
 
       console.log(`Successfully Inserted ${facultyList.length} faculty from ${job.department}`);
