@@ -1,0 +1,124 @@
+import { scrapeDrupalGeneral} from '../scraper/scrapers/genDrupalScraper.js';
+import { scrapeDrupalDirectory } from '../scraper/scrapers/dirDrupalScraper.js';
+import { artScraper } from '../scraper/scrapers/artScraper.js';
+import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
+import { insertFaculty } from '../models/faculty_model.js';
+import db from '../config/db_config.js';
+import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
+import { scrapeEnglishFaculty } from '../scraper/scrapers/englishScraper.js';
+import { gatherResearchLinks } from '../scraper/scrapers/researchLinkScraper.js';
+import { insertFacultyResearchLinks } from '../models/facultyLinks_model.js';
+
+const scrapingJobs = [
+  {
+    url: 'https://www.blackstudies.ucsb.edu/people/academic',
+    scraper: scrapeDrupalGeneral,
+    department: 'Black Studies'
+  },
+  {
+    url: 'https://www.geol.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Earth Science'
+  },
+  {
+    url: 'https://www.eemb.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Ecology, Evolution, and Marine Biology'
+
+  },
+  {
+    url: 'https://www.econ.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Economics'
+  },
+  {
+    url: 'https://www.geog.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Geography'
+  },
+  {
+    url: 'https://www.igpms.ucsb.edu/people/core-faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Marine Science Graduate Program'
+  },
+  {
+    url: 'https://www.physics.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Physics'
+  },
+  {
+    url: 'https://www.ece.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Electrical and Computer Engineering'
+  },
+  //not added to database yet
+  {
+    url: 'https://www.arts.ucsb.edu/faculty/',
+    scraper: artScraper,
+    department: 'Art'
+  },
+  {
+    url: 'https://www.anth.ucsb.edu/people/academic',
+    scraper: scrapeAnthropologyFaculty,
+    department: 'Anthropology'
+
+  },
+  {
+    url: 'https://www.asamst.ucsb.edu/people',
+    scraper: scrapeAnthropologyFaculty,
+    department: 'Asian American Studies'
+  },
+  {
+    url: 'https://www.cs.ucsb.edu/people/faculty',
+    scraper: scrapeCSFaculty,
+    department: 'Computer Science'
+  },
+  {
+    url: 'https://www.english.ucsb.edu/people/faculty',
+    scraper: scrapeEnglishFaculty,
+    department: 'English'
+
+  }
+
+];
+
+async function main() {
+  try {
+    for (const job of scrapingJobs) {
+      console.log(`Scraping: ${job.department}...`);
+
+      const facultyList = await job.scraper(job.url, job.department);
+
+
+      for (const faculty of facultyList) {
+        faculty.department = job.department; // add department field
+        if (!faculty.name) {
+            console.warn('Skipping faculty with no name:', { name: faculty.name, department: job.department });
+            continue; // skip this insert
+            }
+        
+        const faculty_id = await insertFaculty(faculty);
+
+        if(faculty.website && faculty.website != faculty.profile_url){
+            try{
+                const links = await gatherResearchLinks(faculty.website);
+                await insertFacultyResearchLinks(faculty_id, links);
+                console.log(`Inserted research links for ${faculty.name}`);
+
+            } catch(err){
+                console.error(`Error gathering research links for ${faculty.name}:`, err.message);
+            }
+
+        } 
+      }
+
+      console.log(`Successfully Inserted ${facultyList.length} faculty from ${job.department}`);
+    }
+  } catch (err) {
+    console.error('Scraping failed:', err);
+  } finally {
+    db.end();
+  }
+}
+
+main();
