@@ -1,7 +1,8 @@
 import db from '../config/db_config.js';
 import axios from 'axios';
 import unfluff from 'unfluff';
-import 'dotenv/config.js'
+import 'dotenv/config.js';
+import { parsePostgresArray } from './faculty_model.js';
 
 export const getFacultyResearchInfo = async (facultyId) => {
   try {
@@ -34,7 +35,7 @@ export const getFacultyResearchInfo = async (facultyId) => {
       name: row.name,
       title: row.title,
       department: row.department,
-      research_areas: row.research_areas,
+      research_areas: parsePostgresArray(row.research_areas),
       urls, 
     };
   } catch (err) {

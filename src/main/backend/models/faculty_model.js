@@ -1,5 +1,40 @@
 import db from '../config/db_config.js';
 
+
+
+// Helper function to process faculty data and parse arrays
+export const processFacultyData = (facultyData) => {
+  if (Array.isArray(facultyData)) {
+    return facultyData.map(faculty => ({
+      ...faculty,
+      research_areas: parsePostgresArray(faculty.research_areas)
+    }));
+  } else if (facultyData) {
+    return {
+      ...facultyData,
+      research_areas: parsePostgresArray(facultyData.research_areas)
+    };
+  }
+  return facultyData;
+};
+
+// Export the utility function for testing
+export const parsePostgresArray = (pgArray) => {
+  if (!pgArray || typeof pgArray !== 'string') {
+    return [];
+  }
+  
+  // Remove the curly braces and split by comma
+  // Handle cases where items might contain commas or quotes
+  const cleanString = pgArray.replace(/^{|}$/g, '');
+  if (!cleanString) return [];
+  
+  // Split by comma and clean up each item
+  return cleanString.split(',').map(item => 
+    item.trim().replace(/^"|"$/g, '') // Remove surrounding quotes if present
+  );
+};
+
 //insert faculty into db
 
 export const insertFaculty = async (faculty) => {
@@ -47,12 +82,12 @@ export const insertFaculty = async (faculty) => {
 
 export const getAll = async () => {
   const res = await db.query('SELECT * FROM faculty');
-  return res.rows;
+  return processFacultyData(res.rows);
 };
 
 export const getById = async (id) => {
   const res = await db.query('SELECT * FROM faculty WHERE id = $1', [id]);
-  return res.rows[0];
+  return processFacultyData(res.rows[0]);
 };
 
 export const getByName = async (name) => {
@@ -60,7 +95,7 @@ export const getByName = async (name) => {
     'SELECT * FROM faculty WHERE LOWER(name) LIKE LOWER($1)', 
     [`%${name}%`]
   );
-  return res.rows;
+  return processFacultyData(res.rows);
 };
 
 export const getByDepartment = async (department) => {
@@ -68,15 +103,15 @@ export const getByDepartment = async (department) => {
     'SELECT * FROM faculty WHERE LOWER(department) = LOWER($1)', 
     [department]
   );
-  return res.rows;
+  return processFacultyData(res.rows);
 };
 
 export const getByTopic = async (topic) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE LOWER(topics) LIKE LOWER($1)', 
+    'SELECT * FROM faculty WHERE LOWER(research_areas::text) LIKE LOWER($1)', 
     [`%${topic}%`]
   );
-  return res.rows;
+  return processFacultyData(res.rows);
 };
 
 export const getAllbyDeptTopic = async (department, topic) => {
@@ -90,11 +125,11 @@ export const getAllbyDeptTopic = async (department, topic) => {
 
   if (topic) {
     params.push(`%${topic}%`);
-    query += ` AND LOWER(topics) LIKE LOWER($${params.length})`;
+    query += ` AND LOWER(research_areas::text) LIKE LOWER($${params.length})`;
   }
 
   const res = await db.query(query, params);
-  return res.rows;
+  return processFacultyData(res.rows);
 };
 
 
