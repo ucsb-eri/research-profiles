@@ -177,3 +177,57 @@ export async function upsertSummary(facultyId, summary, keywords, broadKeywords)
   }
 }
 
+//gets from database
+export async function getSummaryByFacultyId(facultyId) {
+  try {
+    const res = await db.query(
+      `SELECT summary
+       FROM faculty_summaries
+       WHERE faculty_id = $1`,
+      [facultyId]
+    );
+
+    if (res.rows.length === 0) return null;
+
+    return res.rows[0];
+  } catch (err) {
+    console.error(`DB fetch error for faculty ID ${facultyId}:`, err.message);
+    return null;
+  }
+}
+
+export async function getKeywordsByFacultyId(facultyId) {
+  try {
+    const res = await db.query(
+      `SELECT keywords
+       FROM faculty_summaries
+       WHERE faculty_id = $1`,
+      [facultyId]
+    );  
+
+    if (res.rows.length === 0) return null;
+
+    return res.rows[0];
+  } catch (err) {
+    console.error(`DB fetch error for faculty ID ${facultyId}:`, err.message);
+    return null;
+  }
+}
+
+export async function getBroadKeywordsByFacultyId(facultyId) {
+  try {
+    const res = await db.query(
+      `SELECT broad_keywords
+       FROM faculty_summaries
+       WHERE faculty_id = $1`,
+      [facultyId]
+    ); 
+
+    if (res.rows.length === 0) return null;
+
+    return res.rows[0];
+  } catch (err) {
+    console.error(`DB fetch error for faculty ID ${facultyId}:`, err.message);
+    return null;
+  }
+}
