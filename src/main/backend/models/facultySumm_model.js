@@ -97,20 +97,21 @@ export async function generateResearchSummary(fullText, faculty) {
   const token = process.env.OLLAMA_API_KEY;
   const url = 'https://llm.grit.ucsb.edu/api/chat/completions';
 
-  const MAX_CHARS = 5000;
-  const textToSend = fullText.length > MAX_CHARS ? fullText.slice(0, MAX_CHARS) : fullText;
+  // const MAX_CHARS = 5000;
+  // const textToSend = fullText.length > MAX_CHARS ? fullText.slice(0, MAX_CHARS) : fullText;
 
   const prompt = `
 You are an academic research summarizer.
 
-Given the following information extracted from web pages related to Professor ${faculty.name} (${faculty.title}, ${faculty.department}), write a short paragraph summarizing their research background, areas of impact, and expertise. Then list 5–8 concise keywords representing their core research areas.
+Given the following information extracted from web pages related to Professor ${faculty.name} (${faculty.title}, ${faculty.department}), write a short paragraph summarizing their research background, areas of impact, and expertise for undergraduate students interested in research. Then list 5–8 concise keywords that cover the faculty's research areas and expertise and additional broader keywords that a student interested in this research might look up.
 
 TEXT:
-${textToSend}
+${fullText}
 
 OUTPUT FORMAT:
 Summary: <summary here>
-Keywords: <comma-separated keywords here>
+Research Keywords: <comma-separated keywords here>
+Broad Keywords: <comma-separated keywords here>
 `;
 
   try {
@@ -130,34 +131,46 @@ Keywords: <comma-separated keywords here>
     );
 
     const output = res.data.choices[0].message.content;
-    const summaryMatch = output.match(/\*\*Summary:\*\*\s*([\s\S]+?)\n\*\*Keywords:\*\*/);
-    const keywordsMatch = output.match(/\*\*Keywords:\*\*\s*([\s\S]+)/);
+    //console.log(`LLM raw output for ${faculty.name}:\n${output}\n`);
 
+    const summaryMatch = output.match(/\*?\*Summary:\*?\*\s*([\s\S]+?)\s*\*?\*Research Keywords:\*?\*/i);
+    const keywordsMatch = output.match(/\*?\*Research Keywords:\*?\*\s*([\s\S]+?)\s*\*?\*Broad Keywords:\*?\*/i);
+    const broadKeywordsMatch = output.match(/\*?\*Broad Keywords:\*?\*\s*([\s\S]+)/i);
 
-    // console.log(`LLM output for ${faculty.name}:\n${output}\n`);
-    // console.log(`Summary for ${faculty.name}:\n${summaryMatch?.[1]?.trim() ?? ''}\n`);
-    // console.log(`Keywords for ${faculty.name}:\n${keywordsMatch?.[1]?.trim() ?? ''}\n`);
+    const summaryText = summaryMatch?.[1]?.trim() ?? '';
+
+    const keywordsList = (keywordsMatch?.[1] ?? '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean); // remove empty strings
+
+    const broadKeywordsList = (broadKeywordsMatch?.[1] ?? '')
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean);
 
     return {
-      summary: summaryMatch?.[1]?.trim() ?? '',
-      keywords: keywordsMatch?.[1]?.trim() ?? '',
+      summary: summaryText,
+      keywords: keywordsList,
+      broad_keywords: broadKeywordsList
     };
+
   } catch (err) {
     console.error(`LLM error for ${faculty.name}:`, err.message);
-    return { summary: '', keywords: '' };
+    return { summary: '', keywords: '', broad_keywords: '' };
   }
 }
 
 //insert summaries into the database
 
-export async function upsertSummary(facultyId, summary, keywords) {
+export async function upsertSummary(facultyId, summary, keywords, broadKeywords) {
   try {
     await db.query(
-      `INSERT INTO faculty_research_summary (faculty_id, summary, keywords)
-       VALUES ($1, $2, $3)
+      `INSERT INTO faculty_summaries (faculty_id, summary, keywords, broad_keywords)
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT (faculty_id)
-       DO UPDATE SET summary = EXCLUDED.summary, keywords = EXCLUDED.keywords`,
-      [facultyId, summary, keywords]
+       DO UPDATE SET summary = EXCLUDED.summary, keywords = EXCLUDED.keywords, broad_keywords = EXCLUDED.broad_keywords`,
+      [facultyId, summary, keywords, broadKeywords]
     );
   } catch (err) {
     console.error(`DB upsert error for faculty ID ${facultyId}:`, err.message);
