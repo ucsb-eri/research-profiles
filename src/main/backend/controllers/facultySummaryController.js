@@ -72,11 +72,24 @@ const getBroadKeywordsbyDept = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch faculty broad keywords by department' });
   }
 }
+const getIdbyKeyword = async (req, res) => {
+  const { keyword } = req.query;
+  try {
+    const facultyIds = await facultySumm_model.getIdbyKeyword(keyword);
+    if (!facultyIds || facultyIds.length === 0) {
+      return res.status(404).json({ error: 'No faculty members found for this keyword' });
+    }
+    res.json(facultyIds);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch faculty IDs by keyword' });
+  }
+}
 
 export default{
     getAllbyID,
     getSummarybyID,
     getKeywordsbyID,
     getBroadKeywordsbyID,
-    getBroadKeywordsbyDept
+    getBroadKeywordsbyDept,
+    getIdbyKeyword
 }

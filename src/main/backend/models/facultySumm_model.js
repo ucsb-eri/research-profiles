@@ -249,3 +249,21 @@ export async function getBroadKeywordsbyDept(department){
     return null;
  }
 }
+export async function getIdbyKeyword(keyword) {
+  try {
+    const res = await db.query(
+      `SELECT DISTINCT faculty_id
+       FROM faculty_summaries
+       CROSS JOIN unnest(keywords) AS kw
+       WHERE kw ILIKE $1`,
+      [`%${keyword}%`]
+    );
+
+    if (res.rows.length === 0) return null;
+
+    return res.rows.map(row => row.faculty_id);
+  } catch (err) {
+    console.error(`DB fetch error for keyword ${keyword}:`, err.message);
+    return null;
+  }
+}

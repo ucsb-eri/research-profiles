@@ -81,7 +81,7 @@ export const getDepartments = async () => {
 
 export const getByTopic = async (topic) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE LOWER(topics) LIKE LOWER($1)', 
+    'SELECT * FROM faculty WHERE topics ILIKE $1',
     [`%${topic}%`]
   );
   return res.rows;
