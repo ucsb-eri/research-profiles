@@ -231,3 +231,21 @@ export async function getBroadKeywordsByFacultyId(facultyId) {
     return null;
   }
 }
+
+export async function getBroadKeywordsbyDept(department){
+  try {
+    const res = await db.query(
+      `SELECT DISTINCT unnest(broad_keywords) AS broad_keyword
+       FROM faculty_summaries
+       JOIN faculty ON faculty_summaries.faculty_id = faculty.id
+       WHERE LOWER(faculty.department) = LOWER($1)`,
+      [department]
+    );
+    if (res.rows.length === 0) return null;
+
+    return res.rows.map(row => row.broad_keyword);
+} catch (err) {
+    console.error(`DB fetch error for department ${department}:`, err.message);
+    return null;
+ }
+}

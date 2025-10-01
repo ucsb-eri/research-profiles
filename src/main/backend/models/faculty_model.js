@@ -57,7 +57,7 @@ export const getById = async (id) => {
 
 export const getByName = async (name) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE LOWER(name) LIKE LOWER($1)', 
+    'SELECT * FROM faculty WHERE name ILIKE $1', 
     [`%${name}%`]
   );
   return res.rows;
@@ -70,6 +70,14 @@ export const getByDepartment = async (department) => {
   );
   return res.rows;
 };
+
+export const getDepartments = async () => {
+  const res = await db.query(
+    'SELECT DISTINCT department FROM faculty ORDER BY department'
+  );
+  return res.rows.map(row => row.department);
+}
+
 
 export const getByTopic = async (topic) => {
   const res = await db.query(
