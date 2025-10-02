@@ -35,6 +35,15 @@ const getByName = async (req, res) => {
   }
 };
 
+ const getDepartments = async (req, res) => {
+  try {
+    const departments = await faculty_model.getDepartments();
+    res.json(departments);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch departments' });
+  }
+}
+
 const getByDepartment = async (req, res) => {
   const { department } = req.query;
   try {
@@ -78,6 +87,7 @@ export default {
   getAll,
   getById,
   getByName,
+  getDepartments,
   getByDepartment,
   getByTopic,
   getAllbyDeptTopic
