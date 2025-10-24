@@ -10,6 +10,6 @@ app.use(express.json());
 
 app.use('/api/faculty', facultyRoutes); // Mount faculty routes
 app.use('/api/faculty-links', facultyLinksRoutes); // Mount faculty links routes
-app.use('api/faculty-summaries', facultySummaryRoutes); // Mount faculty summaries routes
+app.use('/api/faculty-summaries', facultySummaryRoutes); // Mount faculty summaries routes
 
 export default app;
