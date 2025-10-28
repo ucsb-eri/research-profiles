@@ -61,7 +61,7 @@ const getBroadKeywordsbyID = async (req, res) => {
 }
 
 const getBroadKeywordsbyDept = async (req, res) => {
-  const { department } = req.query;
+  const { department } = req.params;
   try {
     const broadKeywordsData = await facultySumm_model.getBroadKeywordsbyDept(department);
     if (!broadKeywordsData) {
@@ -73,7 +73,7 @@ const getBroadKeywordsbyDept = async (req, res) => {
   }
 }
 const getIdbyKeyword = async (req, res) => {
-  const { keyword } = req.query;
+  const { keyword } = req.params;
   try {
     const facultyIds = await facultySumm_model.getIdbyKeyword(keyword);
     if (!facultyIds || facultyIds.length === 0) {
