@@ -8,75 +8,93 @@ import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
 import { scrapeEnglishFaculty } from '../scraper/scrapers/englishScraper.js';
 import { gatherResearchLinks } from '../scraper/scrapers/researchLinkScraper.js';
 import { insertFacultyResearchLinks } from '../models/facultyLinks_model.js';
+import { scrapeCommFaculty } from '../scraper/scrapers/commScraper.js';
+import { scrapeESFaculty } from '../scraper/scrapers/ESscraper.js';
 
 const scrapingJobs = [
-  {
-    url: 'https://www.blackstudies.ucsb.edu/people/academic',
-    scraper: scrapeDrupalGeneral,
-    department: 'Black Studies'
-  },
-  {
-    url: 'https://www.geol.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Earth Science'
-  },
-  {
-    url: 'https://www.eemb.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Ecology, Evolution, and Marine Biology'
+  // {
+  //   url: 'https://www.blackstudies.ucsb.edu/people/academic',
+  //   scraper: scrapeDrupalGeneral,
+  //   department: 'Black Studies'
+  // },
+  // {
+  //   url: 'https://www.geol.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Earth Science'
+  // },
+  // {
+  //   url: 'https://www.eemb.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Ecology, Evolution, and Marine Biology'
 
-  },
-  {
-    url: 'https://www.econ.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Economics'
-  },
-  {
-    url: 'https://www.geog.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Geography'
-  },
-  {
-    url: 'https://www.igpms.ucsb.edu/people/core-faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Marine Science Graduate Program'
-  },
-  {
-    url: 'https://www.physics.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Physics'
-  },
-  {
-    url: 'https://www.ece.ucsb.edu/people/faculty',
-    scraper: scrapeDrupalDirectory,
-    department: 'Electrical and Computer Engineering'
-  },
-  //not added to database yet
-  {
-    url: 'https://www.arts.ucsb.edu/faculty/',
-    scraper: artScraper,
-    department: 'Art'
-  },
-  {
-    url: 'https://www.anth.ucsb.edu/people/academic',
-    scraper: scrapeAnthropologyFaculty,
-    department: 'Anthropology'
+  // },
+  // {
+  //   url: 'https://www.econ.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Economics'
+  // },
+  // {
+  //   url: 'https://www.geog.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Geography'
+  // },
+  // {
+  //   url: 'https://www.igpms.ucsb.edu/people/core-faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Marine Science Graduate Program'
+  // },
+  // {
+  //   url: 'https://www.physics.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Physics'
+  // },
+  // {
+  //   url: 'https://www.ece.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Electrical and Computer Engineering'
+  // },
+  // {
+  //   url: 'https://www.arts.ucsb.edu/faculty/',
+  //   scraper: artScraper,
+  //   department: 'Art'
+  // },
+  // {
+  //   url: 'https://www.anth.ucsb.edu/people/academic',
+  //   scraper: scrapeAnthropologyFaculty,
+  //   department: 'Anthropology'
 
-  },
+  // },
+  // {
+  //   url: 'https://www.asamst.ucsb.edu/people',
+  //   scraper: scrapeAnthropologyFaculty,
+  //   department: 'Asian American Studies'
+  // },
+  // {
+  //   url: 'https://www.cs.ucsb.edu/people/faculty',
+  //   scraper: scrapeCSFaculty,
+  //   department: 'Computer Science'
+  // },
+  // {
+  //   url: 'https://www.english.ucsb.edu/people/faculty',
+  //   scraper: scrapeEnglishFaculty,
+  //   department: 'English'
+
+  // },
+  // {
+  //   url: 'https://www.mcdb.ucsb.edu/people/faculty',
+  //   scraper: scrapeDrupalDirectory,
+  //   department: 'Molecular, Cellular, and Developmental Biology'
+  // },
+  // {
+  //   url: 'https://www.comm.ucsb.edu/people/faculty',
+  //   scraper: scrapeCommFaculty,
+  //   department: 'Communication'
+
+  // }, 
   {
-    url: 'https://www.asamst.ucsb.edu/people',
-    scraper: scrapeAnthropologyFaculty,
-    department: 'Asian American Studies'
-  },
-  {
-    url: 'https://www.cs.ucsb.edu/people/faculty',
-    scraper: scrapeCSFaculty,
-    department: 'Computer Science'
-  },
-  {
-    url: 'https://www.english.ucsb.edu/people/faculty',
-    scraper: scrapeEnglishFaculty,
-    department: 'English'
+    url: 'https://es.ucsb.edu/index.php/people/faculty',
+    scraper: scrapeESFaculty,
+    department: 'Environmental Studies'
 
   }
 
