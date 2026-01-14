@@ -117,7 +117,7 @@ async function main() {
         
         const faculty_id = await insertFaculty(faculty);
 
-        if(faculty.website && faculty.website != faculty.profile_url){
+        if(faculty.website){
             try{
                 const links = await gatherResearchLinks(faculty.website);
                 await insertFacultyResearchLinks(faculty_id, links);
