@@ -84,17 +84,17 @@ const scrapingJobs = [
   //   url: 'https://www.mcdb.ucsb.edu/people/faculty',
   //   scraper: scrapeDrupalDirectory,
   //   department: 'Molecular, Cellular, and Developmental Biology'
-  // },
-  // {
-  //   url: 'https://www.comm.ucsb.edu/people/faculty',
-  //   scraper: scrapeCommFaculty,
-  //   department: 'Communication'
-
   // }, 
-  {
-    url: 'https://es.ucsb.edu/index.php/people/faculty',
-    scraper: scrapeESFaculty,
-    department: 'Environmental Studies'
+  // {
+  //   url: 'https://es.ucsb.edu/index.php/people/faculty',
+  //   scraper: scrapeESFaculty,
+  //   department: 'Environmental Studies'
+
+  // },
+   {
+    url: 'https://www.comm.ucsb.edu/people/faculty',
+    scraper: scrapeCommFaculty,
+    department: 'Communication'
 
   }
 

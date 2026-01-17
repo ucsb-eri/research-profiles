@@ -12,68 +12,88 @@ export async function scrapeCommFaculty(url, department) {
     const res = await axios.get(url);
     const $ = load(res.data);
     const faculty = [];
+    const baseUrl = new URL(url).origin;
 
-    // The page has a simpler structure - just links with names and titles
-    // We need to process pairs of elements: link (name) followed by text (title)
-    const elements = $("body").find("a, p, div").toArray();
+    // The page structure shows faculty cards with:
+    // - An image link with <a><img></a>
+    // - An h3 with name link <h3><a href="/people/...">Name</a></h3>
+    // - Title text directly after the h3
     
-    let currentName = null;
-    let currentProfileUrl = null;
-    
-    for (let i = 0; i < elements.length; i++) {
-      const $el = $(elements[i]);
-      const text = $el.text().trim();
+    // Find all faculty profile links in h3 tags
+    $('h3 a[href^="/people/"]').each((_, elem) => {
+      const $link = $(elem);
+      const name = $link.text().trim();
+      const profileUrl = baseUrl + $link.attr('href');
       
-      // Check if this is a faculty profile link
-      const href = $el.attr("href");
-      if (href && href.startsWith("/people/") && text && text.length > 0) {
-        // This is a name link
-        currentName = text;
-        currentProfileUrl = href.startsWith("http") 
-          ? href 
-          : `https://www.comm.ucsb.edu${href}`;
-        
-        // Look ahead for the title (usually the next text element)
-        let title = null;
-        for (let j = i + 1; j < Math.min(i + 5, elements.length); j++) {
-          const nextText = $(elements[j]).text().trim();
-          // Check if it looks like a title (contains Professor, Lecturer, etc.)
-          if (nextText && 
-              (nextText.includes("Professor") || 
-               nextText.includes("Lecturer") || 
-               nextText.includes("Chair") ||
-               nextText.includes("Director") ||
-               nextText.includes("Dean") ||
-               nextText.includes("Emerit"))) {
-            title = nextText.replace(/\s+/g, " ");
-            break;
+      // Get the parent container to find other info
+      const $container = $link.closest('div').parent();
+      
+      // Find the title - it's typically the next text node or sibling element after h3
+      let title = null;
+      const $h3 = $link.closest('h3');
+      
+      // Try to find title in next siblings
+      $h3.nextAll().each((_, sibling) => {
+        const text = $(sibling).text().trim();
+        if (text && !title) {
+          // Check if it looks like a title (not a name or link)
+          if (text.includes('Professor') || 
+              text.includes('Lecturer') || 
+              text.includes('Chair') ||
+              text.includes('Director') ||
+              text.includes('Dean') ||
+              text.includes('Emerit') ||
+              text.includes('Associate') ||
+              text.includes('Assistant')) {
+            title = text.replace(/\s+/g, ' ');
           }
         }
-        
-        if (currentName && currentProfileUrl) {
-          faculty.push({
-            name: currentName,
-            title: title,
-            specialization: null,
-            email: null,
-            phone: null,
-            office: null,
-            website: currentProfileUrl,
-            photo_url: null,
-            research_areas: null,
-            department,
-            profile_url: currentProfileUrl
-          });
+      });
+      
+      // Also check for title in the same container as text nodes
+      if (!title) {
+        const containerText = $container.text();
+        const lines = containerText.split('\n').map(l => l.trim()).filter(Boolean);
+        // Title is usually right after the name
+        const nameIndex = lines.findIndex(l => l === name);
+        if (nameIndex >= 0 && nameIndex < lines.length - 1) {
+          const potentialTitle = lines[nameIndex + 1];
+          if (potentialTitle && potentialTitle !== name) {
+            title = potentialTitle.replace(/\s+/g, ' ');
+          }
         }
       }
-    }
-    
-    // Remove duplicates based on profile URL
-    const uniqueFaculty = Array.from(
-      new Map(faculty.map(f => [f.profile_url, f])).values()
-    );
+      
+      // Find photo - look for image in the same container
+      let photoUrl = null;
+      const $img = $container.find('img').first();
+      if ($img.length) {
+        photoUrl = $img.attr('src');
+        if (photoUrl && photoUrl.startsWith('/')) {
+          photoUrl = baseUrl + photoUrl;
+        }
+      }
+      
+      console.log(`Extracted: ${name} - ${title || 'no title'}`);
+      
+      faculty.push({
+        name,
+        title,
+        specialization: null,
+        email: null,
+        phone: null,
+        office: null,
+        website: profileUrl,
+        photo_url: photoUrl,
+        research_areas: null,
+        department,
+        profile_url: profileUrl,
+      });
+    });
 
-    return uniqueFaculty;
+    console.log(`Extracted ${faculty.length} Communication faculty members`);
+    return faculty;
+    
   } catch (err) {
     console.error("Error scraping Communication:", err.message);
     return [];
