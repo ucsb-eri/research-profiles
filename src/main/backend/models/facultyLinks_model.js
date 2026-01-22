@@ -41,7 +41,7 @@ export const insertFacultyResearchLinks = async (facultyId, links) => {
         crawled_urls,
         personal_website
       )
-      VALUES ($1, $2, $3, $4, $5, now(), $6)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (faculty_id)
       DO UPDATE SET
         orcid_url = COALESCE(EXCLUDED.orcid_url, faculty_research_links.orcid_url),
