@@ -105,4 +105,84 @@ export const getAllbyDeptTopic = async (department, topic) => {
   return res.rows;
 };
 
+// UPDATE faculty by ID
+export const updateFaculty = async (id, updates) => {
+  const {
+    specialization,
+    research_areas,
+    phone,
+    office,
+    website,
+    email,
+    profile_url,
+  } = updates;
+
+  // Build dynamic update query
+  const fields = [];
+  const values = [];
+  let paramCount = 1;
+
+  if (specialization !== undefined) {
+    fields.push(`specialization = $${paramCount}`);
+    values.push(specialization);
+    paramCount++;
+  }
+
+  if (research_areas !== undefined) {
+    // Handle array - PostgreSQL can store as JSON or array type
+    // If research_areas is an array, convert to JSON string or use array format
+    fields.push(`research_areas = $${paramCount}`);
+    // If it's an array, PostgreSQL array type expects it as array
+    // If it's stored as JSON, use JSON.stringify
+    values.push(Array.isArray(research_areas) ? research_areas : research_areas);
+    paramCount++;
+  }
+
+  if (phone !== undefined) {
+    fields.push(`phone = $${paramCount}`);
+    values.push(phone);
+    paramCount++;
+  }
+
+  if (office !== undefined) {
+    fields.push(`office = $${paramCount}`);
+    values.push(office);
+    paramCount++;
+  }
+
+  if (website !== undefined) {
+    fields.push(`website = $${paramCount}`);
+    values.push(website);
+    paramCount++;
+  }
+
+  if (email !== undefined) {
+    fields.push(`email = $${paramCount}`);
+    values.push(email);
+    paramCount++;
+  }
+
+  if (profile_url !== undefined) {
+    fields.push(`profile_url = $${paramCount}`);
+    values.push(profile_url);
+    paramCount++;
+  }
+
+  if (fields.length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  // Add id as last parameter
+  values.push(id);
+  const query = `
+    UPDATE faculty 
+    SET ${fields.join(', ')}
+    WHERE id = $${paramCount}
+    RETURNING *
+  `;
+
+  const res = await db.query(query, values);
+  return res.rows[0];
+};
+
 
