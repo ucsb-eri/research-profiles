@@ -145,14 +145,8 @@ const updateById = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized: User email not provided' });
     }
 
-    // Check if request is from localhost (for testing)
-    // Allow test email bypass only on localhost, not in production
-    const origin = req.headers.origin || req.headers.referer || '';
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1') || 
-                       process.env.NODE_ENV !== 'production';
-    
-    // Allow brian_kim@ucsb.edu to edit any profile for testing (only on localhost)
-    const isTestEmail = isLocalhost && userEmail.toLowerCase() === 'brian_kim@ucsb.edu';
+    // Allow brian_kim@ucsb.edu to edit any profile for testing (works in both local and production)
+    const isTestEmail = userEmail.toLowerCase() === 'brian_kim@ucsb.edu';
     const emailMatches = existingFaculty.email && 
         existingFaculty.email.toLowerCase() === userEmail.toLowerCase();
 
