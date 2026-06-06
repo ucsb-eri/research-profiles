@@ -1,6 +1,9 @@
 {
   "scripts": {
-    "start": "node src/main/backend/server.js"
+    "start": "node src/main/backend/server.js",
+    "db:create": "node src/main/backend/scripts/createDb.js",
+    "migrate": "node src/main/backend/migrations/run.js",
+    "db:setup": "npm run db:create && npm run migrate"
   },
 	"dependencies": {
 		"axios": "^1.11.0",

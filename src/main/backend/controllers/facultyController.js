@@ -83,6 +83,22 @@ const getAllbyDeptTopic = async (req, res) => {
   }
 };
 
+const search = async (req, res) => {
+  const { q, limit, offset } = req.query;
+  if (!q || !q.trim()) {
+    return res.status(400).json({ error: 'Missing required query param: q' });
+  }
+  try {
+    const results = await faculty_model.searchFaculty(q.trim(), {
+      limit: Math.min(parseInt(limit) || 20, 100),
+      offset: parseInt(offset) || 0,
+    });
+    res.json(results); // [] when nothing matches
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to search faculty' });
+  }
+};
+
 export default {
   getAll,
   getById,
@@ -90,5 +106,6 @@ export default {
   getDepartments,
   getByDepartment,
   getByTopic,
-  getAllbyDeptTopic
+  getAllbyDeptTopic,
+  search
 };

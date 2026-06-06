@@ -105,4 +105,33 @@ export const getAllbyDeptTopic = async (department, topic) => {
   return res.rows;
 };
 
+// Unified fuzzy, typo-tolerant search across faculty + their LLM summaries.
+// Uses pg_trgm: word_similarity(query, field) matches the query words inside longer
+// text, and the best-scoring field becomes the row's relevance `rank`.
+// Requires the pg_trgm extension (see scripts/setupSearch.sql).
+export const searchFaculty = async (q, { limit = 20, offset = 0, threshold = 0.15 } = {}) => {
+  const res = await db.query(
+    `WITH scored AS (
+       SELECT f.*,
+         GREATEST(
+           similarity(f.name, $1),
+           word_similarity($1, COALESCE(f.topics, '')),
+           word_similarity($1, COALESCE(f.research_areas, '')),
+           word_similarity($1, COALESCE(f.department, '')),
+           word_similarity($1, COALESCE(s.summary, '')),
+           word_similarity($1, COALESCE(array_to_string(s.keywords, ' '), '')),
+           word_similarity($1, COALESCE(array_to_string(s.broad_keywords, ' '), ''))
+         ) AS rank
+       FROM faculty f
+       LEFT JOIN faculty_summaries s ON s.faculty_id = f.id
+     )
+     SELECT * FROM scored
+     WHERE rank >= $2
+     ORDER BY rank DESC, name ASC
+     LIMIT $3 OFFSET $4`,
+    [q, threshold, limit, offset]
+  );
+  return res.rows;
+};
+
 
