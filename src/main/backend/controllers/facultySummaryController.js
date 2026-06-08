@@ -112,6 +112,10 @@ const update = async (req, res) => {
     const updated = await facultySumm_model.updateSummaryFields(facultyId, fields);
     res.json(updated);
   } catch (error) {
+    console.error(
+      `Failed to update summary for faculty ${facultyId}:`, error.message,
+      error.code ? `(code ${error.code})` : '', error.detail || ''
+    );
     res.status(500).json({ error: 'Failed to update faculty summary' });
   }
 };
