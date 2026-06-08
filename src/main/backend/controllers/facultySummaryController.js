@@ -85,11 +85,43 @@ const getIdbyKeyword = async (req, res) => {
   }
 }
 
+// Accepts arrays or comma-separated strings; returns a clean string[] (or undefined
+// if the field wasn't provided, so it stays untouched downstream).
+const toKeywordArray = (v) => {
+  if (v === undefined) return undefined;
+  if (Array.isArray(v)) return v.map(s => String(s).trim()).filter(Boolean);
+  if (typeof v === 'string') return v.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+};
+
+// Update the AI-generated content. Auth + ownership enforced by middleware.
+const update = async (req, res) => {
+  const facultyId = req.params.id;
+  const { summary, keywords, broad_keywords } = req.body;
+
+  const fields = {};
+  if (summary !== undefined) fields.summary = summary;
+  if (keywords !== undefined) fields.keywords = toKeywordArray(keywords);
+  if (broad_keywords !== undefined) fields.broad_keywords = toKeywordArray(broad_keywords);
+
+  if (Object.keys(fields).length === 0) {
+    return res.status(400).json({ error: 'No editable fields provided' });
+  }
+
+  try {
+    const updated = await facultySumm_model.updateSummaryFields(facultyId, fields);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update faculty summary' });
+  }
+};
+
 export default{
     getAllbyID,
     getSummarybyID,
     getKeywordsbyID,
     getBroadKeywordsbyID,
     getBroadKeywordsbyDept,
-    getIdbyKeyword
+    getIdbyKeyword,
+    update
 }

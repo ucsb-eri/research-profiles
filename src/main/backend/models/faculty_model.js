@@ -105,6 +105,36 @@ export const getAllbyDeptTopic = async (department, topic) => {
   return res.rows;
 };
 
+// Columns an owner is allowed to edit on their own profile. Anything else in the
+// request body is ignored, so a forged field can't touch id/email-uniqueness rules
+// it shouldn't (email is included intentionally so owners can correct it).
+const EDITABLE_FACULTY_COLUMNS = [
+  'specialization',
+  'research_areas',
+  'website',
+  'office',
+  'phone',
+  'profile_url',
+  'email',
+];
+
+// Update the allowlisted fields present in `fields`. Returns the updated row, or
+// undefined if nothing valid was provided / the id doesn't exist.
+export const updateFaculty = async (id, fields = {}) => {
+  const cols = EDITABLE_FACULTY_COLUMNS.filter(c => fields[c] !== undefined);
+  if (cols.length === 0) return undefined;
+
+  const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
+  const params = cols.map(c => fields[c]);
+  params.push(id);
+
+  const res = await db.query(
+    `UPDATE faculty SET ${setClause} WHERE id = $${params.length} RETURNING *`,
+    params
+  );
+  return res.rows[0];
+};
+
 // Unified fuzzy, typo-tolerant search across faculty + their LLM summaries.
 // Uses pg_trgm: word_similarity(query, field) matches the query words inside longer
 // text, and the best-scoring field becomes the row's relevance `rank`.

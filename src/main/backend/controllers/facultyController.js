@@ -99,6 +99,20 @@ const search = async (req, res) => {
   }
 };
 
+// Update profile fields. Auth + ownership are enforced by middleware before this runs.
+const update = async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    const updated = await faculty_model.updateFaculty(id, req.body);
+    if (!updated) {
+      return res.status(400).json({ error: 'No editable fields provided' });
+    }
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update faculty member' });
+  }
+};
+
 export default {
   getAll,
   getById,
@@ -107,5 +121,6 @@ export default {
   getByDepartment,
   getByTopic,
   getAllbyDeptTopic,
-  search
+  search,
+  update
 };

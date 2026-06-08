@@ -1,5 +1,6 @@
 import express from 'express';
 import facultyController from '../controllers/facultyController.js';
+import { requireUcsbAuth, requireProfileOwner } from '../middleware/auth.js';
 const router = express.Router();
 
 // database queries
@@ -18,6 +19,9 @@ router.get('/dept-topic', facultyController.getAllbyDeptTopic);
 
 //moved to bott otherwise it captures all
 router.get('/:id', facultyController.getById);
+
+// Owner-only profile edit (auth + ownership enforced by middleware)
+router.put('/:id', requireUcsbAuth, requireProfileOwner, facultyController.update);
 
 export default router;
 

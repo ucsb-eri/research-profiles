@@ -177,6 +177,33 @@ export async function upsertSummary(facultyId, summary, keywords, broadKeywords)
   }
 }
 
+// Owner-facing partial update of the AI content. Only the fields present in
+// `fields` (summary / keywords / broad_keywords) are changed; the rest keep their
+// current values. Creates the row if the faculty has no summary yet.
+export async function updateSummaryFields(facultyId, fields = {}) {
+  const existing = await db.query(
+    'SELECT summary, keywords, broad_keywords FROM faculty_summaries WHERE faculty_id = $1',
+    [facultyId]
+  );
+  const cur = existing.rows[0] || { summary: null, keywords: [], broad_keywords: [] };
+
+  const summary = fields.summary !== undefined ? fields.summary : cur.summary;
+  const keywords = fields.keywords !== undefined ? fields.keywords : cur.keywords;
+  const broadKeywords = fields.broad_keywords !== undefined ? fields.broad_keywords : cur.broad_keywords;
+
+  const res = await db.query(
+    `INSERT INTO faculty_summaries (faculty_id, summary, keywords, broad_keywords)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (faculty_id) DO UPDATE SET
+       summary = EXCLUDED.summary,
+       keywords = EXCLUDED.keywords,
+       broad_keywords = EXCLUDED.broad_keywords
+     RETURNING summary, keywords, broad_keywords`,
+    [facultyId, summary, keywords ?? [], broadKeywords ?? []]
+  );
+  return res.rows[0];
+}
+
 //gets from database
 export async function getSummaryByFacultyId(facultyId) {
   try {
