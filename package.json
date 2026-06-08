@@ -3,13 +3,18 @@
     "start": "node src/main/backend/server.js",
     "db:create": "node src/main/backend/scripts/createDb.js",
     "migrate": "node src/main/backend/migrations/run.js",
-    "db:setup": "npm run db:create && npm run migrate"
+    "db:setup": "npm run db:create && npm run migrate",
+    "data:scrape": "node src/main/backend/scripts/loadFaculty.js",
+    "data:summaries": "node src/main/backend/scripts/genSummaries.js",
+    "data:load": "npm run data:scrape && npm run data:summaries"
   },
 	"dependencies": {
 		"axios": "^1.11.0",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "papaparse": "^5.4.1",
     "pg": "^8.16.3",
     "unfluff": "^3.2.0"
   }

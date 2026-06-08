@@ -11,7 +11,7 @@ import { insertFacultyResearchLinks } from '../models/facultyLinks_model.js';
 
 const scrapingJobs = [
   {
-    url: 'https://www.blackstudies.ucsb.edu/people/academic',
+    url: 'https://www.blackstudies.ucsb.edu/people',
     scraper: scrapeDrupalGeneral,
     department: 'Black Studies'
   },
@@ -58,7 +58,7 @@ const scrapingJobs = [
     department: 'Art'
   },
   {
-    url: 'https://www.anth.ucsb.edu/people/academic',
+    url: 'https://www.anth.ucsb.edu/people',
     scraper: scrapeAnthropologyFaculty,
     department: 'Anthropology'
 
@@ -83,42 +83,57 @@ const scrapingJobs = [
 ];
 
 async function main() {
-  try {
-    for (const job of scrapingJobs) {
-      console.log(`Scraping: ${job.department}...`);
+  let grandTotal = 0;
 
-      const facultyList = await job.scraper(job.url, job.department);
+  for (const job of scrapingJobs) {
+    console.log(`Scraping: ${job.department}...`);
 
+    // Scrape one department. A failure here (e.g. the source page moved and
+    // returns 404) must not abort the whole run, so handle it per-department.
+    let facultyList;
+    try {
+      facultyList = await job.scraper(job.url, job.department);
+    } catch (err) {
+      console.error(`  Skipping ${job.department}: scrape failed (${err.message})`);
+      continue;
+    }
 
-      for (const faculty of facultyList) {
-        faculty.department = job.department; // add department field
-        if (!faculty.name) {
-            console.warn('Skipping faculty with no name:', { name: faculty.name, department: job.department });
-            continue; // skip this insert
-            }
-        
-        const faculty_id = await insertFaculty(faculty);
+    if (!Array.isArray(facultyList) || facultyList.length === 0) {
+      console.warn(`  No faculty parsed for ${job.department} — source page may have changed. Skipping.`);
+      continue;
+    }
 
-        if(faculty.website && faculty.website != faculty.profile_url){
-            try{
-                const links = await gatherResearchLinks(faculty.website);
-                await insertFacultyResearchLinks(faculty_id, links);
-                console.log(`Inserted research links for ${faculty.name}`);
-
-            } catch(err){
-                console.error(`Error gathering research links for ${faculty.name}:`, err.message);
-            }
-
-        } 
+    let inserted = 0;
+    for (const faculty of facultyList) {
+      faculty.department = job.department; // add department field
+      if (!faculty.name) {
+        console.warn(`  Skipping a ${job.department} entry with no name`);
+        continue;
       }
 
-      console.log(`Successfully Inserted ${facultyList.length} faculty from ${job.department}`);
+      try {
+        const faculty_id = await insertFaculty(faculty);
+        inserted++;
+
+        if (faculty.website && faculty.website != faculty.profile_url) {
+          try {
+            const links = await gatherResearchLinks(faculty.website);
+            await insertFacultyResearchLinks(faculty_id, links);
+          } catch (err) {
+            console.error(`  Error gathering research links for ${faculty.name}:`, err.message);
+          }
+        }
+      } catch (err) {
+        console.error(`  Error inserting ${faculty.name}:`, err.message);
+      }
     }
-  } catch (err) {
-    console.error('Scraping failed:', err);
-  } finally {
-    db.end();
+
+    grandTotal += inserted;
+    console.log(`  Inserted ${inserted}/${facultyList.length} faculty from ${job.department}`);
   }
+
+  console.log(`Done. Inserted ${grandTotal} faculty across all departments.`);
+  await db.end();
 }
 
 main();
