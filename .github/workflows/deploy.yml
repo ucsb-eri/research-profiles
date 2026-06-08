@@ -22,6 +22,28 @@ jobs:
           source: "*,!.git,!.github,!.gitignore"
           target: /home/research-profiles/production/research-profiles-api
           rm: true
+      - name: write environment file
+        uses: appleboy/ssh-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          PORT: ${{ vars.PORT }}
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Forward the values from the runner into the remote shell so the
+          # heredoc below can write them. Secrets are never printed to the log.
+          envs: DATABASE_URL,OLLAMA_API_KEY,PORT
+          script: |
+            cd /home/research-profiles/production/research-profiles-api
+            umask 077
+            {
+              printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+              printf 'OLLAMA_API_KEY=%s\n' "$OLLAMA_API_KEY"
+              printf 'PORT=%s\n' "${PORT:-3001}"
+            } > .env
+            chmod 600 .env
       - name: install dependencies
         uses: appleboy/ssh-action@v1
         with:
@@ -31,6 +53,18 @@ jobs:
           script: |
             cd /home/research-profiles/production/research-profiles-api
             npm install --omit=dev
+      - name: run database migrations
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Reads DATABASE_URL from the .env written above. Idempotent: only
+          # pending migrations run. Fails the deploy (before restart) if a
+          # migration errors, so a bad schema change can't reach a running service.
+          script: |
+            cd /home/research-profiles/production/research-profiles-api
+            npm run migrate
       - name: restart the service
         uses: appleboy/ssh-action@v1
         with:
