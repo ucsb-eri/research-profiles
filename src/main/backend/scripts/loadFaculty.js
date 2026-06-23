@@ -2,7 +2,7 @@ import { scrapeDrupalGeneral} from '../scraper/scrapers/genDrupalScraper.js';
 import { scrapeDrupalDirectory } from '../scraper/scrapers/dirDrupalScraper.js';
 import { artScraper } from '../scraper/scrapers/artScraper.js';
 import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
-import { scrapeAsianAmericanStudiesFaculty } from '../scraper/scrapers/asamstScraper.js';
+import { scrapeResponsiveGrid } from '../scraper/scrapers/responsiveGridScraper.js';
 import { scrapeEnvironmentalStudiesFaculty } from '../scraper/scrapers/envStudiesScraper.js';
 import { scrapeFeministStudiesFaculty } from '../scraper/scrapers/feministScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
@@ -68,7 +68,7 @@ const scrapingJobs = [
   },
   {
     url: 'https://www.asamst.ucsb.edu/people',
-    scraper: scrapeAsianAmericanStudiesFaculty,
+    scraper: scrapeResponsiveGrid,
     department: 'Asian American Studies'
   },
   {
@@ -97,6 +97,25 @@ const scrapingJobs = [
     url: 'https://femst.ucsb.edu/people/academic',
     scraper: scrapeFeministStudiesFaculty,
     department: 'Feminist Studies'
+  },
+  {
+    // One combined page covers the CSV's separate "Dance" and "Theater" rows.
+    // CSV listed /people/academic (404); the live path is /people.
+    url: 'https://www.theaterdance.ucsb.edu/people',
+    scraper: scrapeResponsiveGrid,
+    department: 'Theater and Dance'
+  },
+  {
+    // CSV listed /technology-management-people (404); the live path is /people.
+    url: 'https://tmp.ucsb.edu/people',
+    scraper: scrapeDrupalGeneral,
+    department: 'Technology Management'
+  },
+  {
+    // CSV listed /all-faculty (404); the live path is /people.
+    url: 'https://www.frit.ucsb.edu/people',
+    scraper: scrapeResponsiveGrid,
+    department: 'French and Italian'
   }
 
 ];
