@@ -3,6 +3,8 @@ import { scrapeDrupalDirectory } from '../scraper/scrapers/dirDrupalScraper.js';
 import { artScraper } from '../scraper/scrapers/artScraper.js';
 import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
 import { scrapeAsianAmericanStudiesFaculty } from '../scraper/scrapers/asamstScraper.js';
+import { scrapeEnvironmentalStudiesFaculty } from '../scraper/scrapers/envStudiesScraper.js';
+import { scrapeFeministStudiesFaculty } from '../scraper/scrapers/feministScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -79,6 +81,22 @@ const scrapingJobs = [
     scraper: scrapeEnglishFaculty,
     department: 'English'
 
+  },
+  {
+    // Same page also covers the CSV's "Developmental Biology" row (identical URL).
+    url: 'https://www.mcdb.ucsb.edu/people/faculty',
+    scraper: scrapeDrupalDirectory,
+    department: 'Molecular, Cellular, and Developmental Biology'
+  },
+  {
+    url: 'https://es.ucsb.edu/index.php/people/faculty',
+    scraper: scrapeEnvironmentalStudiesFaculty,
+    department: 'Environmental Studies'
+  },
+  {
+    url: 'https://femst.ucsb.edu/people/academic',
+    scraper: scrapeFeministStudiesFaculty,
+    department: 'Feminist Studies'
   }
 
 ];
