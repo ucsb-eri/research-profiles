@@ -2,6 +2,7 @@ import { scrapeDrupalGeneral} from '../scraper/scrapers/genDrupalScraper.js';
 import { scrapeDrupalDirectory } from '../scraper/scrapers/dirDrupalScraper.js';
 import { artScraper } from '../scraper/scrapers/artScraper.js';
 import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js';
+import { scrapeAsianAmericanStudiesFaculty } from '../scraper/scrapers/asamstScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -65,7 +66,7 @@ const scrapingJobs = [
   },
   {
     url: 'https://www.asamst.ucsb.edu/people',
-    scraper: scrapeAnthropologyFaculty,
+    scraper: scrapeAsianAmericanStudiesFaculty,
     department: 'Asian American Studies'
   },
   {
