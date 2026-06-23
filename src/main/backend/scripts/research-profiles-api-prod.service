@@ -1,0 +1,47 @@
+# research-profiles-api-prod.service
+#
+# systemd UNIT for the production Research Profiles API.
+#
+# This is a **user** service (it runs under the deploy user's `systemctl --user`
+# manager, not the system manager). Install it as:
+#
+#   mkdir -p ~/.config/systemd/user
+#   cp src/main/backend/scripts/research-profiles-api-prod.service \
+#      ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now research-profiles-api-prod.service
+#
+# Secrets (DATABASE_URL, OLLAMA_API_KEY) and PORT come from the deployed .env
+# in WorkingDirectory (NOT committed — see .env.example). Keep it locked down:
+#   chmod 600 /home/research-profiles/production/research-profiles-api/.env
+#
+# NOTE: confirm the node path on the host with `command -v node` and update
+# ExecStart if it differs (e.g. an nvm path instead of /usr/bin/node).
+
+[Unit]
+Description=Research Profiles API
+After=default.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=2
+WorkingDirectory=/home/research-profiles/production/research-profiles-api
+
+# NODE_ENV stays inline — not a secret, and it's deploy-specific (this unit IS
+# the production deploy), so it does not belong in the repo .env.
+Environment=NODE_ENV=production
+
+# PORT, DATABASE_URL, OLLAMA_API_KEY come from the deployed .env. Must be an
+# ABSOLUTE path. systemd does no ${VAR} expansion and ignores `export`, so the
+# .env must stay plain KEY=value (it is). A leading "-" would make the file
+# optional; without it the service fails loudly if .env is missing — desired.
+EnvironmentFile=/home/research-profiles/production/research-profiles-api/.env
+
+# Run node directly (not `npm start`) so systemd's MainPID is the server itself
+# and can be tracked/killed cleanly on restart — `npm start` left an untracked
+# node grandchild that survived restarts and kept serving with stale config.
+ExecStart=/usr/bin/node src/main/backend/server.js
+
+[Install]
+WantedBy=default.target
