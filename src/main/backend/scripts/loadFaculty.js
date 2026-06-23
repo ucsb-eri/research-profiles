@@ -5,6 +5,9 @@ import { scrapeAnthropologyFaculty } from '../scraper/scrapers/anthroScraper.js'
 import { scrapeResponsiveGrid } from '../scraper/scrapers/responsiveGridScraper.js';
 import { scrapeEnvironmentalStudiesFaculty } from '../scraper/scrapers/envStudiesScraper.js';
 import { scrapeFeministStudiesFaculty } from '../scraper/scrapers/feministScraper.js';
+import { scrapeBrenFaculty } from '../scraper/scrapers/brenScraper.js';
+import { scrapeCCSFaculty } from '../scraper/scrapers/ccsScraper.js';
+import { scrapeMaterialsFaculty } from '../scraper/scrapers/materialsScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -124,6 +127,23 @@ const scrapingJobs = [
     url: 'https://www.religion.ucsb.edu/faculty',
     scraper: scrapeResponsiveGrid,
     department: 'Religious Studies'
+  },
+  {
+    url: 'https://bren.ucsb.edu/people/faculty',
+    scraper: scrapeBrenFaculty,
+    department: 'Bren School of Environmental Science'
+  },
+  {
+    url: 'https://ccs.ucsb.edu/people',
+    scraper: scrapeCCSFaculty,
+    department: 'College of Creative Studies'
+  },
+  {
+    // The /people/faculty page lists ~250 people of all roles; the scraper
+    // filters to faculty (professors/lecturers/emeriti) only.
+    url: 'https://www.materials.ucsb.edu/people/faculty',
+    scraper: scrapeMaterialsFaculty,
+    department: 'Materials'
   }
 
 ];
