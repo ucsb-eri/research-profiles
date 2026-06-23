@@ -116,6 +116,14 @@ const scrapingJobs = [
     url: 'https://www.frit.ucsb.edu/people',
     scraper: scrapeResponsiveGrid,
     department: 'French and Italian'
+  },
+  {
+    // CSV listed /people/faculty (404); the live path is /faculty. This page
+    // also covers the CSV's "Middle East Studies" row (a program housed in the
+    // Religious Studies dept, same listing).
+    url: 'https://www.religion.ucsb.edu/faculty',
+    scraper: scrapeResponsiveGrid,
+    department: 'Religious Studies'
   }
 
 ];
