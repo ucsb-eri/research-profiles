@@ -1,10 +1,20 @@
 import * as faculty_model from '../models/faculty_model.js';
 
+// Log the underlying DB/driver error so 500s aren't silent in the journal.
+// `context` identifies the failing handler; pg errors carry code/detail.
+const logDbError = (context, error) => {
+  console.error(
+    `${context}:`, error.message,
+    error.code ? `(code ${error.code})` : '', error.detail || ''
+  );
+};
+
 const getAll = async (req, res) => {
   try {
     const facultyMembers = await faculty_model.getAll();
     res.json(facultyMembers);
   } catch (error) {
+    logDbError('Failed to fetch faculty members', error);
     res.status(500).json({ error: 'Failed to fetch faculty members' });
   }
 };
@@ -18,6 +28,7 @@ const getById = async (req, res) => {
     }
     res.json(facultyMember);
   } catch (error) {
+    logDbError(`Failed to fetch faculty member ${id}`, error);
     res.status(500).json({ error: 'Failed to fetch faculty member' });
   }
 };
@@ -31,6 +42,7 @@ const getByName = async (req, res) => {
     }
     res.json(facultyMembers);
   } catch (error) {
+    logDbError('Failed to fetch faculty members by name', error);
     res.status(500).json({ error: 'Failed to fetch faculty members by name' });
   }
 };
@@ -40,6 +52,7 @@ const getByName = async (req, res) => {
     const departments = await faculty_model.getDepartments();
     res.json(departments);
   } catch (error) {
+    logDbError('Failed to fetch departments', error);
     res.status(500).json({ error: 'Failed to fetch departments' });
   }
 }
@@ -53,6 +66,7 @@ const getByDepartment = async (req, res) => {
     }
     res.json(facultyMembers);
   } catch (error) {
+    logDbError('Failed to fetch faculty members by department', error);
     res.status(500).json({ error: 'Failed to fetch faculty members by department' });
   }
 };
@@ -66,6 +80,7 @@ const getByTopic = async (req, res) => {
     }
     res.json(facultyMembers);
   } catch (error) {
+    logDbError('Failed to fetch faculty members by topic', error);
     res.status(500).json({ error: 'Failed to fetch faculty members by topic' });
   }
 };
@@ -79,6 +94,7 @@ const getAllbyDeptTopic = async (req, res) => {
     }
     res.json(facultyMembers);
   } catch (error) {
+    logDbError('Failed to fetch faculty members by department and topic', error);
     res.status(500).json({ error: 'Failed to fetch faculty members by department and topic' });
   }
 };
@@ -95,6 +111,7 @@ const search = async (req, res) => {
     });
     res.json(results); // [] when nothing matches
   } catch (error) {
+    logDbError('Failed to search faculty', error);
     res.status(500).json({ error: 'Failed to search faculty' });
   }
 };
@@ -109,10 +126,7 @@ const update = async (req, res) => {
     }
     res.json(updated);
   } catch (error) {
-    console.error(
-      `Failed to update faculty ${id}:`, error.message,
-      error.code ? `(code ${error.code})` : '', error.detail || ''
-    );
+    logDbError(`Failed to update faculty ${id}`, error);
     res.status(500).json({ error: 'Failed to update faculty member' });
   }
 };

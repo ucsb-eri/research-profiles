@@ -1,5 +1,14 @@
 import * as facultySumm_model from '../models/facultySumm_model.js';
 
+// Log the underlying DB/driver error so 500s aren't silent in the journal.
+// `context` identifies the failing handler; pg errors carry code/detail.
+const logDbError = (context, error) => {
+  console.error(
+    `${context}:`, error.message,
+    error.code ? `(code ${error.code})` : '', error.detail || ''
+  );
+};
+
 const getAllbyID = async (req, res) => {
   const facultyId = req.params.id;
   try {
@@ -17,6 +26,7 @@ const getAllbyID = async (req, res) => {
       broad_keywords: broadKeywordsData
     });
   } catch (error) {
+    logDbError(`Failed to fetch faculty information ${facultyId}`, error);
     res.status(500).json({ error: 'Failed to fetch faculty information' });
   }
 };
@@ -30,6 +40,7 @@ const getSummarybyID = async (req, res) => {
     }
     res.json(summaryData);
   } catch (error) {
+    logDbError(`Failed to fetch faculty summary ${facultyId}`, error);
     res.status(500).json({ error: 'Failed to fetch faculty summary' });
   }
 };
@@ -43,6 +54,7 @@ const getKeywordsbyID = async (req, res) => {
     }
     res.json(keywordsData);
   } catch (error) {
+    logDbError(`Failed to fetch faculty keywords ${facultyId}`, error);
     res.status(500).json({ error: 'Failed to fetch faculty keywords' });
   }
 };
@@ -56,6 +68,7 @@ const getBroadKeywordsbyID = async (req, res) => {
     }
     res.json(broadKeywordsData);
   } catch (error) {
+    logDbError(`Failed to fetch faculty broad keywords ${facultyId}`, error);
     res.status(500).json({ error: 'Failed to fetch faculty broad keywords' });
   }
 }
@@ -69,6 +82,7 @@ const getBroadKeywordsbyDept = async (req, res) => {
     }
     res.json(broadKeywordsData);
   } catch (error) {
+    logDbError('Failed to fetch faculty broad keywords by department', error);
     res.status(500).json({ error: 'Failed to fetch faculty broad keywords by department' });
   }
 }
@@ -81,6 +95,7 @@ const getIdbyKeyword = async (req, res) => {
     }
     res.json(facultyIds);
   } catch (error) {
+    logDbError('Failed to fetch faculty IDs by keyword', error);
     res.status(500).json({ error: 'Failed to fetch faculty IDs by keyword' });
   }
 }
@@ -112,10 +127,7 @@ const update = async (req, res) => {
     const updated = await facultySumm_model.updateSummaryFields(facultyId, fields);
     res.json(updated);
   } catch (error) {
-    console.error(
-      `Failed to update summary for faculty ${facultyId}:`, error.message,
-      error.code ? `(code ${error.code})` : '', error.detail || ''
-    );
+    logDbError(`Failed to update summary for faculty ${facultyId}`, error);
     res.status(500).json({ error: 'Failed to update faculty summary' });
   }
 };
