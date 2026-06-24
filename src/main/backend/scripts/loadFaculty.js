@@ -26,6 +26,9 @@ import { scrapeJewishStudiesFaculty } from '../scraper/scrapers/jewishStudiesScr
 import { scrapeMediaArtsTechFaculty } from '../scraper/scrapers/mediaArtsTechScraper.js';
 import { scrapeFilmMediaFaculty } from '../scraper/scrapers/filmMediaScraper.js';
 import { scrapeEducationFaculty } from '../scraper/scrapers/educationScraper.js';
+import { scrapeColGridFaculty } from '../scraper/scrapers/colGridScraper.js';
+import { scrapePsychFaculty } from '../scraper/scrapers/psychScraper.js';
+import { scrapeEMSFaculty } from '../scraper/scrapers/emsScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -256,6 +259,70 @@ const scrapingJobs = [
     url: 'https://education.ucsb.edu/research-faculty/faculty',
     scraper: scrapeEducationFaculty,
     department: 'Gevirtz Graduate School of Education'
+  },
+
+  // --- col-lg-4 directory pages: one shared scraper, filtered to faculty.
+  // These /people pages list the whole department (grad students/staff too);
+  // scrapeColGridFaculty keeps only professorial/lecturer/emeritus roles and
+  // fetches emails from each faculty member's profile page.
+  {
+    url: 'https://www.chem.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Chemistry and Biochemistry'
+  },
+  {
+    url: 'https://www.math.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Mathematics'
+  },
+  {
+    url: 'https://www.philosophy.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Philosophy'
+  },
+  {
+    url: 'https://www.polsci.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Political Science'
+  },
+  {
+    url: 'https://www.soc.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Sociology'
+  },
+  {
+    url: 'https://www.linguistics.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Linguistics'
+  },
+  {
+    url: 'https://www.global.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Global and International Studies'
+  },
+  {
+    // Affiliated program; most members are cross-listed from home departments,
+    // so only a few list a faculty rank here (the rest dedupe in via their dept).
+    url: 'https://complit.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'Comparative Literature'
+  },
+  {
+    url: 'https://www.arthistory.ucsb.edu/people',
+    scraper: scrapeColGridFaculty,
+    department: 'History of Art and Architecture'
+  },
+  {
+    // Table layout; role is in the profile-link path (filtered to faculty + emeriti).
+    url: 'https://psych.ucsb.edu/people',
+    scraper: scrapePsychFaculty,
+    department: 'Psychological & Brain Sciences'
+  },
+  {
+    // Mixes instructional faculty with staff; filtered to instructional roles.
+    url: 'https://www.ems.ucsb.edu/people',
+    scraper: scrapeEMSFaculty,
+    department: 'English for Multilingual Students'
   }
 
 ];
