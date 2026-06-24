@@ -8,6 +8,24 @@ import { scrapeFeministStudiesFaculty } from '../scraper/scrapers/feministScrape
 import { scrapeBrenFaculty } from '../scraper/scrapers/brenScraper.js';
 import { scrapeCCSFaculty } from '../scraper/scrapers/ccsScraper.js';
 import { scrapeMaterialsFaculty } from '../scraper/scrapers/materialsScraper.js';
+import { scrapeHistoryFaculty } from '../scraper/scrapers/historyScraper.js';
+import { scrapePstatFaculty } from '../scraper/scrapers/pstatScraper.js';
+import { scrapeMechanicalEngineeringFaculty } from '../scraper/scrapers/mechanicalEngineeringScraper.js';
+import { scrapeChemicalEngineeringFaculty } from '../scraper/scrapers/chemicalEngineeringScraper.js';
+import { scrapeEastAsianFaculty } from '../scraper/scrapers/eastAsianScraper.js';
+import { scrapeGSSFaculty } from '../scraper/scrapers/gssScraper.js';
+import { scrapeClassicsFaculty } from '../scraper/scrapers/classicsScraper.js';
+import { scrapeMusicFaculty } from '../scraper/scrapers/musicScraper.js';
+import { scrapeCommunicationFaculty } from '../scraper/scrapers/commScraper.js';
+import { scrapeWritingFaculty } from '../scraper/scrapers/writingScraper.js';
+import { scrapeChicanoStudiesFaculty } from '../scraper/scrapers/chicanoStudiesScraper.js';
+import { scrapeMilitaryScienceFaculty } from '../scraper/scrapers/militaryScienceScraper.js';
+import { scrapeLaisFaculty } from '../scraper/scrapers/laisScraper.js';
+import { scrapeSpanishPortugueseFaculty } from '../scraper/scrapers/spanishPortugueseScraper.js';
+import { scrapeJewishStudiesFaculty } from '../scraper/scrapers/jewishStudiesScraper.js';
+import { scrapeMediaArtsTechFaculty } from '../scraper/scrapers/mediaArtsTechScraper.js';
+import { scrapeFilmMediaFaculty } from '../scraper/scrapers/filmMediaScraper.js';
+import { scrapeEducationFaculty } from '../scraper/scrapers/educationScraper.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -144,6 +162,100 @@ const scrapingJobs = [
     url: 'https://www.materials.ucsb.edu/people/faculty',
     scraper: scrapeMaterialsFaculty,
     department: 'Materials'
+  },
+  {
+    url: 'https://www.history.ucsb.edu/directory/faculty/',
+    scraper: scrapeHistoryFaculty,
+    department: 'History'
+  },
+  {
+    url: 'https://www.pstat.ucsb.edu/people/faculty',
+    scraper: scrapePstatFaculty,
+    department: 'Statistics and Applied Probability'
+  },
+  {
+    // ?tid=5 restricts the listing to faculty server-side.
+    url: 'https://me.ucsb.edu/people?tid=5',
+    scraper: scrapeMechanicalEngineeringFaculty,
+    department: 'Mechanical Engineering'
+  },
+  {
+    url: 'https://www.chemengr.ucsb.edu/people/faculty',
+    scraper: scrapeChemicalEngineeringFaculty,
+    department: 'Chemical Engineering'
+  },
+  {
+    url: 'https://www.eastasian.ucsb.edu/people/faculty',
+    scraper: scrapeEastAsianFaculty,
+    department: 'East Asian Languages and Cultural Studies'
+  },
+  {
+    url: 'https://gss.ucsb.edu/faculty',
+    scraper: scrapeGSSFaculty,
+    department: 'Germanic and Slavic Studies'
+  },
+  {
+    url: 'https://www.classics.ucsb.edu/people/faculty',
+    scraper: scrapeClassicsFaculty,
+    department: 'Classics'
+  },
+  {
+    // CSV listed /people (redirects to a landing page); the live path is /people/faculty.
+    url: 'https://music.ucsb.edu/people/faculty',
+    scraper: scrapeMusicFaculty,
+    department: 'Music'
+  },
+  {
+    url: 'https://www.comm.ucsb.edu/people/faculty',
+    scraper: scrapeCommunicationFaculty,
+    department: 'Communication'
+  },
+  {
+    url: 'https://writing.ucsb.edu/people',
+    scraper: scrapeWritingFaculty,
+    department: 'Writing Program'
+  },
+  {
+    url: 'https://www.chicst.ucsb.edu/people',
+    scraper: scrapeChicanoStudiesFaculty,
+    department: 'Chicana and Chicano Studies'
+  },
+  {
+    url: 'https://www.milsci.ucsb.edu/people',
+    scraper: scrapeMilitaryScienceFaculty,
+    department: 'Military Science (ROTC)'
+  },
+  {
+    url: 'https://lais.ucsb.edu/faculty/',
+    scraper: scrapeLaisFaculty,
+    department: 'Latin American and Iberian Studies'
+  },
+  {
+    url: 'https://www.spanport.ucsb.edu/people/core-faculty',
+    scraper: scrapeSpanishPortugueseFaculty,
+    department: 'Spanish and Portuguese'
+  },
+  {
+    url: 'https://www.jewishstudies.ucsb.edu/people',
+    scraper: scrapeJewishStudiesFaculty,
+    department: 'Jewish Studies'
+  },
+  {
+    url: 'https://www.mat.ucsb.edu/faculty/',
+    scraper: scrapeMediaArtsTechFaculty,
+    department: 'Media Arts and Technology'
+  },
+  {
+    url: 'https://www.filmandmedia.ucsb.edu/people/faculty/',
+    scraper: scrapeFilmMediaFaculty,
+    department: 'Film and Media Studies'
+  },
+  {
+    // Listing is JS-rendered; the scraper queries the muster JSONP service the
+    // page itself calls (database=ggsedb), filtered to faculty/lecturers.
+    url: 'https://education.ucsb.edu/research-faculty/faculty',
+    scraper: scrapeEducationFaculty,
+    department: 'Gevirtz Graduate School of Education'
   }
 
 ];
