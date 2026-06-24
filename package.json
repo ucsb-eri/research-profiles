@@ -6,6 +6,7 @@
     "db:setup": "npm run db:create && npm run migrate",
     "data:scrape": "node src/main/backend/scripts/loadFaculty.js",
     "db:dedupe": "node src/main/backend/scripts/dedupeFaculty.js",
+    "user:create": "node src/main/backend/scripts/createUser.js",
     "data:summaries": "node src/main/backend/scripts/genSummaries.js",
     "data:load": "npm run data:scrape && npm run data:summaries"
   },
