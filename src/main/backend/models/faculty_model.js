@@ -45,16 +45,24 @@ export const insertFaculty = async (faculty) => {
 
 //GETS
 
+// Default browse ordering: by last name. `name` is stored as "First Last", so a
+// plain ORDER BY name sorts by first name; regexp_replace strips everything up
+// to the last space, leaving the last token to sort on (case-insensitively).
+// Single-word names fall through unchanged. Tiebreak by full name then id so
+// pagination stays stable.
+const ORDER_BY_LAST_NAME =
+  `ORDER BY lower(regexp_replace(trim(name), '^.* ', '')) ASC, name ASC, id ASC`;
+
 // Stable ordering is required for correct pagination — LIMIT/OFFSET without an
 // ORDER BY can repeat or skip rows between pages. Pagination is opt-in: omit
 // `limit` to get the full list (keeps existing callers working).
 export const getAll = async ({ limit = null, offset = 0 } = {}) => {
   if (limit === null) {
-    const res = await db.query('SELECT * FROM faculty ORDER BY name ASC, id ASC');
+    const res = await db.query(`SELECT * FROM faculty ${ORDER_BY_LAST_NAME}`);
     return res.rows;
   }
   const res = await db.query(
-    'SELECT * FROM faculty ORDER BY name ASC, id ASC LIMIT $1 OFFSET $2',
+    `SELECT * FROM faculty ${ORDER_BY_LAST_NAME} LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
   return res.rows;
@@ -74,7 +82,7 @@ export const getById = async (id) => {
 
 export const getByName = async (name) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE name ILIKE $1', 
+    `SELECT * FROM faculty WHERE name ILIKE $1 ${ORDER_BY_LAST_NAME}`,
     [`%${name}%`]
   );
   return res.rows;
@@ -82,7 +90,7 @@ export const getByName = async (name) => {
 
 export const getByDepartment = async (department) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE LOWER(department) = LOWER($1)', 
+    `SELECT * FROM faculty WHERE LOWER(department) = LOWER($1) ${ORDER_BY_LAST_NAME}`,
     [department]
   );
   return res.rows;
@@ -98,7 +106,7 @@ export const getDepartments = async () => {
 
 export const getByTopic = async (topic) => {
   const res = await db.query(
-    'SELECT * FROM faculty WHERE topics ILIKE $1',
+    `SELECT * FROM faculty WHERE topics ILIKE $1 ${ORDER_BY_LAST_NAME}`,
     [`%${topic}%`]
   );
   return res.rows;
@@ -118,6 +126,7 @@ export const getAllbyDeptTopic = async (department, topic) => {
     query += ` AND LOWER(topics) LIKE LOWER($${params.length})`;
   }
 
+  query += ` ${ORDER_BY_LAST_NAME}`;
   const res = await db.query(query, params);
   return res.rows;
 };
