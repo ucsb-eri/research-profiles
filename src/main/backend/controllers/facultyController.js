@@ -11,7 +11,20 @@ const logDbError = (context, error) => {
 
 const getAll = async (req, res) => {
   try {
-    const facultyMembers = await faculty_model.getAll();
+    // Pagination is opt-in. With no `limit` we return the full list (backwards
+    // compatible). With `limit`, return that page and expose the total via the
+    // X-Total-Count header so the client can drive infinite scroll.
+    const hasLimit = req.query.limit !== undefined;
+    const limit = hasLimit
+      ? Math.min(Math.max(parseInt(req.query.limit, 10) || 0, 1), 100)
+      : null;
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+
+    const facultyMembers = await faculty_model.getAll({ limit, offset });
+
+    if (hasLimit) {
+      res.set('X-Total-Count', String(await faculty_model.countAll()));
+    }
     res.json(facultyMembers);
   } catch (error) {
     logDbError('Failed to fetch faculty members', error);
@@ -104,11 +117,16 @@ const search = async (req, res) => {
   if (!q || !q.trim()) {
     return res.status(400).json({ error: 'Missing required query param: q' });
   }
+  const term = q.trim();
+  const pageLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
   try {
-    const results = await faculty_model.searchFaculty(q.trim(), {
-      limit: Math.min(parseInt(limit) || 20, 100),
-      offset: parseInt(offset) || 0,
+    const results = await faculty_model.searchFaculty(term, {
+      limit: pageLimit,
+      offset: pageOffset,
     });
+    // Expose the total match count so clients can paginate / infinite-scroll.
+    res.set('X-Total-Count', String(await faculty_model.countSearchFaculty(term)));
     res.json(results); // [] when nothing matches
   } catch (error) {
     logDbError('Failed to search faculty', error);

@@ -5,7 +5,11 @@ import facultyLinksRoutes from './routes/facultyLinksRoutes.js';
 import facultySummaryRoutes from './routes/facultySummaryRoutes.js';
 
 const app = express();
-app.use(cors({ origin: ['https://research-profiles.grit.ucsb.edu', 'http://localhost:3000'] }));
+app.use(cors({
+  origin: ['https://research-profiles.grit.ucsb.edu', 'http://localhost:3000'],
+  // Let the browser read the pagination total on GET /api/faculty?limit=...
+  exposedHeaders: ['X-Total-Count'],
+}));
 app.use(express.json());
 
 app.use('/api/faculty', facultyRoutes); // Mount faculty routes

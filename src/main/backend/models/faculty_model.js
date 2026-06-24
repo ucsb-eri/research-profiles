@@ -45,9 +45,26 @@ export const insertFaculty = async (faculty) => {
 
 //GETS
 
-export const getAll = async () => {
-  const res = await db.query('SELECT * FROM faculty');
+// Stable ordering is required for correct pagination — LIMIT/OFFSET without an
+// ORDER BY can repeat or skip rows between pages. Pagination is opt-in: omit
+// `limit` to get the full list (keeps existing callers working).
+export const getAll = async ({ limit = null, offset = 0 } = {}) => {
+  if (limit === null) {
+    const res = await db.query('SELECT * FROM faculty ORDER BY name ASC, id ASC');
+    return res.rows;
+  }
+  const res = await db.query(
+    'SELECT * FROM faculty ORDER BY name ASC, id ASC LIMIT $1 OFFSET $2',
+    [limit, offset]
+  );
   return res.rows;
+};
+
+// Total faculty count, for paginated clients (e.g. infinite scroll) to know
+// when they've loaded everything.
+export const countAll = async () => {
+  const res = await db.query('SELECT COUNT(*)::int AS count FROM faculty');
+  return res.rows[0].count;
 };
 
 export const getById = async (id) => {
@@ -135,26 +152,35 @@ export const updateFaculty = async (id, fields = {}) => {
   return res.rows[0];
 };
 
+// Minimum relevance for a row to count as a search match. Shared by
+// searchFaculty and countSearchFaculty so the page and its total stay in sync.
+const SEARCH_THRESHOLD = 0.15;
+
+// The scoring CTE used by both search and its count. $1 is the query string;
+// each row gets a `rank` = best pg_trgm similarity across its searchable fields.
+const SCORED_CTE = `
+  WITH scored AS (
+    SELECT f.*,
+      GREATEST(
+        similarity(f.name, $1),
+        word_similarity($1, COALESCE(f.topics, '')),
+        word_similarity($1, COALESCE(f.research_areas, '')),
+        word_similarity($1, COALESCE(f.department, '')),
+        word_similarity($1, COALESCE(s.summary, '')),
+        word_similarity($1, COALESCE(array_to_string(s.keywords, ' '), '')),
+        word_similarity($1, COALESCE(array_to_string(s.broad_keywords, ' '), ''))
+      ) AS rank
+    FROM faculty f
+    LEFT JOIN faculty_summaries s ON s.faculty_id = f.id
+  )`;
+
 // Unified fuzzy, typo-tolerant search across faculty + their LLM summaries.
 // Uses pg_trgm: word_similarity(query, field) matches the query words inside longer
 // text, and the best-scoring field becomes the row's relevance `rank`.
 // Requires the pg_trgm extension (see scripts/setupSearch.sql).
-export const searchFaculty = async (q, { limit = 20, offset = 0, threshold = 0.15 } = {}) => {
+export const searchFaculty = async (q, { limit = 20, offset = 0, threshold = SEARCH_THRESHOLD } = {}) => {
   const res = await db.query(
-    `WITH scored AS (
-       SELECT f.*,
-         GREATEST(
-           similarity(f.name, $1),
-           word_similarity($1, COALESCE(f.topics, '')),
-           word_similarity($1, COALESCE(f.research_areas, '')),
-           word_similarity($1, COALESCE(f.department, '')),
-           word_similarity($1, COALESCE(s.summary, '')),
-           word_similarity($1, COALESCE(array_to_string(s.keywords, ' '), '')),
-           word_similarity($1, COALESCE(array_to_string(s.broad_keywords, ' '), ''))
-         ) AS rank
-       FROM faculty f
-       LEFT JOIN faculty_summaries s ON s.faculty_id = f.id
-     )
+    `${SCORED_CTE}
      SELECT * FROM scored
      WHERE rank >= $2
      ORDER BY rank DESC, name ASC
@@ -162,6 +188,19 @@ export const searchFaculty = async (q, { limit = 20, offset = 0, threshold = 0.1
     [q, threshold, limit, offset]
   );
   return res.rows;
+};
+
+// Total number of faculty matching a search (ignores limit/offset), so paginated
+// clients know when they've loaded every result. Uses the same scoring +
+// threshold as searchFaculty.
+export const countSearchFaculty = async (q, { threshold = SEARCH_THRESHOLD } = {}) => {
+  const res = await db.query(
+    `${SCORED_CTE}
+     SELECT COUNT(*)::int AS count FROM scored
+     WHERE rank >= $2`,
+    [q, threshold]
+  );
+  return res.rows[0].count;
 };
 
 
