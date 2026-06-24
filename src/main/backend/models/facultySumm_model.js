@@ -92,34 +92,64 @@ export async function extractTextsFromUrls(urls = [], concurrency = 4) {
   return results.join('\n\n');
 }
 
-//generate summaries for a faculty member
+// Coerce a model's value into a clean string[]. Accepts an array, or a
+// comma-separated string in case a model returns keywords as text.
+function toStringList(v) {
+  if (Array.isArray(v)) return v.map(s => String(s).trim()).filter(Boolean);
+  if (typeof v === 'string') return v.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+
+// Parse the model's JSON reply, tolerating ```json fences or surrounding prose
+// (some models add a sentence before/after the object even in JSON mode).
+function parseSummaryReply(content) {
+  if (!content) return null;
+  let text = String(content).trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) text = fenced[1].trim();
+  if (!text.startsWith('{')) {
+    const brace = text.match(/\{[\s\S]*\}/); // first {...} block
+    if (brace) text = brace[0];
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+// Generate a research summary + keywords for a faculty member. Asks the model
+// for structured JSON (response_format) instead of a fixed text layout, so we
+// parse JSON rather than regex-scraping prose. The model is configurable via
+// SUMMARY_MODEL (default gemma4:31b).
 export async function generateResearchSummary(fullText, faculty) {
   const token = process.env.OLLAMA_API_KEY;
   const url = 'https://llm.grit.ucsb.edu/api/chat/completions';
+  const model = process.env.SUMMARY_MODEL || 'gemma4:31b';
 
-  // const MAX_CHARS = 5000;
-  // const textToSend = fullText.length > MAX_CHARS ? fullText.slice(0, MAX_CHARS) : fullText;
+  const prompt = `You are an academic research summarizer.
 
-  const prompt = `
-You are an academic research summarizer.
+Using the information below about Professor ${faculty.name} (${faculty.title}, ${faculty.department}), produce:
+- summary: a short paragraph (3-5 sentences) covering their research background, areas of impact, and expertise, written for undergraduate students interested in research.
+- keywords: 5-8 concise keywords covering their specific research areas and expertise.
+- broad_keywords: a few broader keywords a student might search to find this kind of research.
 
-Given the following information extracted from web pages related to Professor ${faculty.name} (${faculty.title}, ${faculty.department}), write a short paragraph summarizing their research background, areas of impact, and expertise for undergraduate students interested in research. Then list 5–8 concise keywords that cover the faculty's research areas and expertise and additional broader keywords that a student interested in this research might look up.
+Respond with ONLY a JSON object of the form:
+{"summary": "...", "keywords": ["..."], "broad_keywords": ["..."]}
 
 TEXT:
-${fullText}
-
-OUTPUT FORMAT:
-Summary: <summary here>
-Research Keywords: <comma-separated keywords here>
-Broad Keywords: <comma-separated keywords here>
-`;
+${fullText}`;
 
   try {
     const res = await axios.post(
       url,
       {
-        model: 'phi4:latest',
+        model,
         messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4, // steadier, less embellished summaries
+        // Constrain the reply to JSON. OpenWebUI/Ollama honor response_format;
+        // parseSummaryReply still recovers the object if a model adds stray prose.
+        response_format: { type: 'json_object' },
       },
       {
         headers: {
@@ -130,34 +160,20 @@ Broad Keywords: <comma-separated keywords here>
       }
     );
 
-    const output = res.data.choices[0].message.content;
-    //console.log(`LLM raw output for ${faculty.name}:\n${output}\n`);
-
-    const summaryMatch = output.match(/\*?\*Summary:\*?\*\s*([\s\S]+?)\s*\*?\*Research Keywords:\*?\*/i);
-    const keywordsMatch = output.match(/\*?\*Research Keywords:\*?\*\s*([\s\S]+?)\s*\*?\*Broad Keywords:\*?\*/i);
-    const broadKeywordsMatch = output.match(/\*?\*Broad Keywords:\*?\*\s*([\s\S]+)/i);
-
-    const summaryText = summaryMatch?.[1]?.trim() ?? '';
-
-    const keywordsList = (keywordsMatch?.[1] ?? '')
-    .split(',')
-    .map(k => k.trim())
-    .filter(Boolean); // remove empty strings
-
-    const broadKeywordsList = (broadKeywordsMatch?.[1] ?? '')
-      .split(',')
-      .map(k => k.trim())
-      .filter(Boolean);
+    const parsed = parseSummaryReply(res.data?.choices?.[0]?.message?.content);
+    if (!parsed) {
+      console.error(`LLM returned unparseable output for ${faculty.name}`);
+      return { summary: '', keywords: [], broad_keywords: [] };
+    }
 
     return {
-      summary: summaryText,
-      keywords: keywordsList,
-      broad_keywords: broadKeywordsList
+      summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
+      keywords: toStringList(parsed.keywords),
+      broad_keywords: toStringList(parsed.broad_keywords),
     };
-
   } catch (err) {
     console.error(`LLM error for ${faculty.name}:`, err.message);
-    return { summary: '', keywords: '', broad_keywords: '' };
+    return { summary: '', keywords: [], broad_keywords: [] };
   }
 }
 
