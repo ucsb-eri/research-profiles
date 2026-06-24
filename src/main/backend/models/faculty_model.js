@@ -17,12 +17,14 @@ export const insertFaculty = async (faculty) => {
     profile_url: profile_url = website // use website as profile URL if not provided
   } = faculty;
 
+  // ON CONFLICT with no target catches BOTH unique guards: the email UNIQUE
+  // constraint, and the partial unique index on (lower(name), lower(department))
+  // WHERE email IS NULL (migration 004) that stops null-email re-inserts.
   const result = await db.query(
     `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     ON CONFLICT (email) DO NOTHING
+     ON CONFLICT DO NOTHING
      RETURNING id`,
-    // Use ON CONFLICT to avoid duplicates based on email
     [name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url]
   );
 
@@ -30,12 +32,25 @@ export const insertFaculty = async (faculty) => {
     return result.rows[0].id; // inserted
   }
 
-  // Fetch the existing faculty ID if insert was skipped
-  const existing = await db.query(
-    `SELECT id FROM faculty WHERE email = $1`,
-    [email]
-  );
+  // Insert skipped on a unique conflict — return the existing row's id. Look it
+  // up by email when present, otherwise by the (name, department) guard. The
+  // expressions mirror migration 004's index so we find the row that blocked us.
+  if (email) {
+    const existing = await db.query('SELECT id FROM faculty WHERE email = $1', [email]);
+    return existing.rows[0]?.id ?? null;
+  }
 
+  const existing = await db.query(
+    `SELECT id FROM faculty
+      WHERE email IS NULL
+        AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim($1), '\\s+', ' ', 'g'))
+        AND lower(regexp_replace(btrim(coalesce(department, '')), '\\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim(coalesce($2, '')), '\\s+', ' ', 'g'))
+      ORDER BY id
+      LIMIT 1`,
+    [name, department]
+  );
   return existing.rows[0]?.id ?? null;
 };
 
