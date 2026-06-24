@@ -22,6 +22,9 @@ router.get('/id/:id', facultySummaryController.getAllbyID);
 // Owner-only edit of the AI-generated content (summary / keywords / broad_keywords)
 router.put('/id/:id', requireUcsbAuth, requireProfileOwner, facultySummaryController.update);
 
+// Owner-only: hand the blurb back to AI (clears the owner-edited flag).
+router.put('/id/:id/reset-to-ai', requireUcsbAuth, requireProfileOwner, facultySummaryController.resetToAI);
+
 export default router;
 
 

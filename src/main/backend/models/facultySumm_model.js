@@ -163,18 +163,40 @@ Broad Keywords: <comma-separated keywords here>
 
 //insert summaries into the database
 
+// Write an AI-generated summary: insert a new one, or refresh an existing
+// AI one — but NEVER overwrite a row the owner has edited. The conditional
+// ON CONFLICT ... WHERE makes that an atomic no-op when owner_edited is set.
+// Returns true if it wrote, false if it was skipped (owner-edited or error).
 export async function upsertSummary(facultyId, summary, keywords, broadKeywords) {
   try {
-    await db.query(
+    const res = await db.query(
       `INSERT INTO faculty_summaries (faculty_id, summary, keywords, broad_keywords)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (faculty_id)
-       DO UPDATE SET summary = EXCLUDED.summary, keywords = EXCLUDED.keywords, broad_keywords = EXCLUDED.broad_keywords`,
+       ON CONFLICT (faculty_id) DO UPDATE SET
+         summary = EXCLUDED.summary,
+         keywords = EXCLUDED.keywords,
+         broad_keywords = EXCLUDED.broad_keywords
+       WHERE faculty_summaries.owner_edited IS NOT TRUE
+       RETURNING faculty_id`,
       [facultyId, summary, keywords, broadKeywords]
     );
+    return res.rowCount > 0;
   } catch (err) {
     console.error(`DB upsert error for faculty ID ${facultyId}:`, err.message);
+    return false;
   }
+}
+
+// Summary status for a faculty member, so the generator can skip owner-edited
+// (and optionally already-summarized) rows before spending an LLM call.
+export async function getSummaryStatus(facultyId) {
+  const res = await db.query(
+    `SELECT (summary IS NOT NULL AND btrim(summary) <> '') AS has_summary, owner_edited
+       FROM faculty_summaries WHERE faculty_id = $1`,
+    [facultyId]
+  );
+  if (res.rows.length === 0) return { exists: false, has_summary: false, owner_edited: false };
+  return { exists: true, has_summary: res.rows[0].has_summary, owner_edited: res.rows[0].owner_edited };
 }
 
 // Owner-facing partial update of the AI content. Only the fields present in
@@ -191,13 +213,15 @@ export async function updateSummaryFields(facultyId, fields = {}) {
   const keywords = fields.keywords !== undefined ? fields.keywords : cur.keywords;
   const broadKeywords = fields.broad_keywords !== undefined ? fields.broad_keywords : cur.broad_keywords;
 
+  // Mark the row owner_edited = TRUE so AI generation won't overwrite it.
   const res = await db.query(
-    `INSERT INTO faculty_summaries (faculty_id, summary, keywords, broad_keywords)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO faculty_summaries (faculty_id, summary, keywords, broad_keywords, owner_edited)
+     VALUES ($1, $2, $3, $4, TRUE)
      ON CONFLICT (faculty_id) DO UPDATE SET
        summary = EXCLUDED.summary,
        keywords = EXCLUDED.keywords,
-       broad_keywords = EXCLUDED.broad_keywords
+       broad_keywords = EXCLUDED.broad_keywords,
+       owner_edited = TRUE
      RETURNING summary, keywords, broad_keywords`,
     [facultyId, summary, keywords ?? [], broadKeywords ?? []]
   );
@@ -208,7 +232,7 @@ export async function updateSummaryFields(facultyId, fields = {}) {
 export async function getSummaryByFacultyId(facultyId) {
   try {
     const res = await db.query(
-      `SELECT summary
+      `SELECT summary, owner_edited
        FROM faculty_summaries
        WHERE faculty_id = $1`,
       [facultyId]
@@ -216,11 +240,23 @@ export async function getSummaryByFacultyId(facultyId) {
 
     if (res.rows.length === 0) return null;
 
-    return res.rows[0];
+    return res.rows[0]; // { summary, owner_edited }
   } catch (err) {
     console.error(`DB fetch error for faculty ID ${facultyId}:`, err.message);
     return null;
   }
+}
+
+// Clear the owner-edited flag so AI generation will manage this blurb again on
+// the next run. Returns the row, or undefined if the faculty has no summary.
+export async function clearOwnerEdited(facultyId) {
+  const res = await db.query(
+    `UPDATE faculty_summaries SET owner_edited = FALSE
+     WHERE faculty_id = $1
+     RETURNING summary, keywords, broad_keywords, owner_edited`,
+    [facultyId]
+  );
+  return res.rows[0];
 }
 
 export async function getKeywordsByFacultyId(facultyId) {

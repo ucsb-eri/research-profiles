@@ -132,6 +132,23 @@ const update = async (req, res) => {
   }
 };
 
+// Hand the blurb back to AI: clear owner_edited so the next generation run can
+// refresh it. Auth + ownership enforced by middleware. The text is unchanged
+// until that run; only the "managed by" flag flips.
+const resetToAI = async (req, res) => {
+  const facultyId = req.params.id;
+  try {
+    const updated = await facultySumm_model.clearOwnerEdited(facultyId);
+    if (!updated) {
+      return res.status(404).json({ error: 'No summary to reset' });
+    }
+    res.json(updated);
+  } catch (error) {
+    logDbError(`Failed to reset summary for faculty ${facultyId}`, error);
+    res.status(500).json({ error: 'Failed to reset faculty summary' });
+  }
+};
+
 export default{
     getAllbyID,
     getSummarybyID,
@@ -139,5 +156,6 @@ export default{
     getBroadKeywordsbyID,
     getBroadKeywordsbyDept,
     getIdbyKeyword,
-    update
+    update,
+    resetToAI
 }
