@@ -122,10 +122,9 @@ function parseSummaryReply(content) {
 // for structured JSON (response_format) instead of a fixed text layout, so we
 // parse JSON rather than regex-scraping prose. The model is configurable via
 // SUMMARY_MODEL (default gemma4:31b).
-export async function generateResearchSummary(fullText, faculty) {
+export async function generateResearchSummary(fullText, faculty, model = process.env.SUMMARY_MODEL || 'gemma4:31b') {
   const token = process.env.OLLAMA_API_KEY;
   const url = 'https://llm.grit.ucsb.edu/api/chat/completions';
-  const model = process.env.SUMMARY_MODEL || 'gemma4:31b';
 
   const prompt = `You are an academic research summarizer.
 
