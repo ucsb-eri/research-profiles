@@ -12,6 +12,8 @@ router.get('/', facultyController.getAll);
 router.get('/search', facultyController.search);
 router.get('/name', facultyController.getByName);
 router.get('/alldepartments', facultyController.getDepartments);
+router.get('/alldivisions', facultyController.getDivisions);
+router.get('/division', facultyController.getByDivision);
 router.get('/department', facultyController.getByDepartment);
 router.get('/topic', facultyController.getByTopic);
 router.get('/dept-topic', facultyController.getAllbyDeptTopic);

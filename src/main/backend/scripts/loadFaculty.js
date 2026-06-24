@@ -29,6 +29,7 @@ import { scrapeEducationFaculty } from '../scraper/scrapers/educationScraper.js'
 import { scrapeColGridFaculty } from '../scraper/scrapers/colGridScraper.js';
 import { scrapePsychFaculty } from '../scraper/scrapers/psychScraper.js';
 import { scrapeEMSFaculty } from '../scraper/scrapers/emsScraper.js';
+import { DEPARTMENT_DIVISION } from '../scraper/divisions.js';
 import { insertFaculty } from '../models/faculty_model.js';
 import db from '../config/db_config.js';
 import { scrapeCSFaculty } from '../scraper/scrapers/csScraper.js';
@@ -351,6 +352,7 @@ async function main() {
     let inserted = 0;
     for (const faculty of facultyList) {
       faculty.department = job.department; // add department field
+      faculty.division = DEPARTMENT_DIVISION[job.department] ?? null; // tag with UCSB division
       if (!faculty.name) {
         console.warn(`  Skipping a ${job.department} entry with no name`);
         continue;

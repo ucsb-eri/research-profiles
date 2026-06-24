@@ -1,4 +1,5 @@
 import db from '../config/db_config.js';
+import { DIVISION_ORDER } from '../scraper/divisions.js';
 
 //insert faculty into db
 
@@ -14,18 +15,19 @@ export const insertFaculty = async (faculty) => {
     photo_url: photo_url,
     department: department,
     research_areas: research_areas = null, // Default to null if not provided
-    profile_url: profile_url = website // use website as profile URL if not provided
+    profile_url: profile_url = website, // use website as profile URL if not provided
+    division: division = null // UCSB division; set by the loader from divisions.js
   } = faculty;
 
   // ON CONFLICT with no target catches BOTH unique guards: the email UNIQUE
   // constraint, and the partial unique index on (lower(name), lower(department))
   // WHERE email IS NULL (migration 004) that stops null-email re-inserts.
   const result = await db.query(
-    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO faculty (name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url, division)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT DO NOTHING
      RETURNING id`,
-    [name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url]
+    [name, title, specialization, email, phone, office, website, photo_url, research_areas, department, profile_url, division]
   );
 
   if (result.rows.length > 0) {
@@ -117,6 +119,44 @@ export const getDepartments = async () => {
   );
   return res.rows.map(row => row.department);
 }
+
+export const getByDivision = async (division) => {
+  const res = await db.query(
+    `SELECT * FROM faculty WHERE LOWER(division) = LOWER($1) ${ORDER_BY_LAST_NAME}`,
+    [division]
+  );
+  return res.rows;
+};
+
+// Divisions with their departments, for the grouped filter dropdown. Returns
+// [{ division, departments: [...] }], divisions and departments each sorted.
+export const getDivisionsGrouped = async () => {
+  const res = await db.query(
+    `SELECT division, department
+       FROM faculty
+      WHERE division IS NOT NULL AND department IS NOT NULL
+      GROUP BY division, department
+      ORDER BY division, department`
+  );
+  const byName = new Map();
+  for (const { division, department } of res.rows) {
+    let entry = byName.get(division);
+    if (!entry) {
+      entry = { division, departments: [] };
+      byName.set(division, entry);
+    }
+    entry.departments.push(department);
+  }
+  // Order divisions by the canonical UCSB order; anything not listed there
+  // (e.g. future/legacy divisions) falls to the end, alphabetically.
+  const rank = (d) => {
+    const i = DIVISION_ORDER.indexOf(d);
+    return i === -1 ? DIVISION_ORDER.length : i;
+  };
+  return [...byName.values()].sort(
+    (a, b) => rank(a.division) - rank(b.division) || a.division.localeCompare(b.division)
+  );
+};
 
 
 export const getByTopic = async (topic) => {

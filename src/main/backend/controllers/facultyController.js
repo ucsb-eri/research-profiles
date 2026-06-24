@@ -70,6 +70,31 @@ const getByName = async (req, res) => {
   }
 }
 
+// Divisions with their departments, for the grouped filter dropdown.
+const getDivisions = async (req, res) => {
+  try {
+    const divisions = await faculty_model.getDivisionsGrouped();
+    res.json(divisions);
+  } catch (error) {
+    logDbError('Failed to fetch divisions', error);
+    res.status(500).json({ error: 'Failed to fetch divisions' });
+  }
+}
+
+const getByDivision = async (req, res) => {
+  const { division } = req.query;
+  try {
+    const facultyMembers = await faculty_model.getByDivision(division);
+    if (facultyMembers.length === 0) {
+      return res.status(404).json({ error: 'No faculty members found for this division' });
+    }
+    res.json(facultyMembers);
+  } catch (error) {
+    logDbError('Failed to fetch faculty members by division', error);
+    res.status(500).json({ error: 'Failed to fetch faculty members by division' });
+  }
+};
+
 const getByDepartment = async (req, res) => {
   const { department } = req.query;
   try {
@@ -154,6 +179,8 @@ export default {
   getById,
   getByName,
   getDepartments,
+  getDivisions,
+  getByDivision,
   getByDepartment,
   getByTopic,
   getAllbyDeptTopic,

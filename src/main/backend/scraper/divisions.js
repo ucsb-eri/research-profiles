@@ -1,0 +1,79 @@
+// Department -> UCSB division mapping. Source of truth for populating
+// faculty.division: the loader uses it for new inserts, and migration 005
+// backfills existing rows from the same data (keep the two in sync). Keys are
+// the department names as stored by loadFaculty.js.
+
+export const DEPARTMENT_DIVISION = {
+  // Humanities and Fine Arts
+  'Art': 'Humanities and Fine Arts',
+  'Classics': 'Humanities and Fine Arts',
+  'Comparative Literature': 'Humanities and Fine Arts',
+  'East Asian Languages and Cultural Studies': 'Humanities and Fine Arts',
+  'English': 'Humanities and Fine Arts',
+  'English for Multilingual Students': 'Humanities and Fine Arts',
+  'Film and Media Studies': 'Humanities and Fine Arts',
+  'French and Italian': 'Humanities and Fine Arts',
+  'Germanic and Slavic Studies': 'Humanities and Fine Arts',
+  'History': 'Humanities and Fine Arts',
+  'History of Art and Architecture': 'Humanities and Fine Arts',
+  'Jewish Studies': 'Humanities and Fine Arts',
+  'Latin American and Iberian Studies': 'Humanities and Fine Arts',
+  'Linguistics': 'Humanities and Fine Arts',
+  'Media Arts and Technology': 'Humanities and Fine Arts',
+  'Music': 'Humanities and Fine Arts',
+  'Philosophy': 'Humanities and Fine Arts',
+  'Religious Studies': 'Humanities and Fine Arts',
+  'Spanish and Portuguese': 'Humanities and Fine Arts',
+  'Theater and Dance': 'Humanities and Fine Arts',
+  'Writing Program': 'Humanities and Fine Arts',
+
+  // Mathematical, Life, and Physical Sciences
+  'Chemistry and Biochemistry': 'Mathematical, Life, and Physical Sciences',
+  'Earth Science': 'Mathematical, Life, and Physical Sciences',
+  'Ecology, Evolution, and Marine Biology': 'Mathematical, Life, and Physical Sciences',
+  'Environmental Studies': 'Mathematical, Life, and Physical Sciences',
+  'Geography': 'Mathematical, Life, and Physical Sciences',
+  'Marine Science Graduate Program': 'Mathematical, Life, and Physical Sciences',
+  'Mathematics': 'Mathematical, Life, and Physical Sciences',
+  'Molecular, Cellular, and Developmental Biology': 'Mathematical, Life, and Physical Sciences',
+  'Physics': 'Mathematical, Life, and Physical Sciences',
+  'Psychological & Brain Sciences': 'Mathematical, Life, and Physical Sciences',
+  'Statistics and Applied Probability': 'Mathematical, Life, and Physical Sciences',
+
+  // Social Sciences
+  'Anthropology': 'Social Sciences',
+  'Asian American Studies': 'Social Sciences',
+  'Black Studies': 'Social Sciences',
+  'Chicana and Chicano Studies': 'Social Sciences',
+  'Communication': 'Social Sciences',
+  'Economics': 'Social Sciences',
+  'Feminist Studies': 'Social Sciences',
+  'Global and International Studies': 'Social Sciences',
+  'Military Science (ROTC)': 'Social Sciences',
+  'Political Science': 'Social Sciences',
+  'Sociology': 'Social Sciences',
+
+  // Engineering
+  'Chemical Engineering': 'Engineering',
+  'Computer Science': 'Engineering',
+  'Electrical and Computer Engineering': 'Engineering',
+  'Materials': 'Engineering',
+  'Mechanical Engineering': 'Engineering',
+  'Technology Management': 'Engineering',
+
+  // Standalone schools / colleges (each its own division)
+  'Bren School of Environmental Science': 'Bren School of Environmental Science & Management',
+  'College of Creative Studies': 'College of Creative Studies',
+  'Gevirtz Graduate School of Education': 'Gevirtz Graduate School of Education',
+};
+
+// Preferred display order for divisions in the UI.
+export const DIVISION_ORDER = [
+  'Humanities and Fine Arts',
+  'Mathematical, Life, and Physical Sciences',
+  'Social Sciences',
+  'Engineering',
+  'Bren School of Environmental Science & Management',
+  'College of Creative Studies',
+  'Gevirtz Graduate School of Education',
+];
