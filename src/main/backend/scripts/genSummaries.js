@@ -18,6 +18,8 @@ import db from '../config/db_config.js';
 //   --start-after ID    skip faculty with id <= ID (explicit resume point).
 //   --report PATH       write the run report here (default: summary_run_<ts>.md).
 //   --no-report         don't write a report file.
+//   --timeout SECONDS   per-summary LLM response timeout (default 120). Raise it
+//                       when a slow/large model times out before replying.
 // Owner-edited summaries are ALWAYS skipped (never overwritten).
 const ONLY_MISSING = process.argv.includes('--only-missing');
 const NO_REPORT = process.argv.includes('--no-report');
@@ -34,6 +36,10 @@ const numArg = (flag) => {
 const LIMIT = numArg('--limit');
 const START_AFTER = numArg('--start-after');
 const REPORT_PATH = strArg('--report');
+// LLM response timeout, given in seconds on the CLI; converted to ms for axios.
+// Falls back to SUMMARY_TIMEOUT_MS, then the model's 120s default.
+const TIMEOUT_SECONDS = numArg('--timeout');
+const TIMEOUT_MS = TIMEOUT_SECONDS != null ? TIMEOUT_SECONDS * 1000 : undefined;
 
 const MODEL = process.env.SUMMARY_MODEL || 'gemma4:31b';
 
@@ -54,7 +60,7 @@ function buildReport(r) {
     `# Summary generation run — ${r.finishedAt}`,
     '',
     `- Model: \`${MODEL}\``,
-    `- Flags: only-missing=${ONLY_MISSING}, limit=${LIMIT ?? 'none'}, start-after=${START_AFTER ?? 'none'}`,
+    `- Flags: only-missing=${ONLY_MISSING}, limit=${LIMIT ?? 'none'}, start-after=${START_AFTER ?? 'none'}, timeout=${TIMEOUT_SECONDS ?? 120}s`,
     `- Duration: ${(r.durationMs / 1000).toFixed(1)}s`,
     r.stoppedAtLimit ? `- Stopped at --limit; resume with: \`--start-after ${r.lastId}\`` : '- Completed full scan',
     '',
@@ -147,7 +153,7 @@ async function generateAllSummaries() {
       }
 
       attempted++;
-      const { summary, keywords, broad_keywords } = await generateResearchSummary(scrapedText, faculty);
+      const { summary, keywords, broad_keywords } = await generateResearchSummary(scrapedText, faculty, MODEL, TIMEOUT_MS);
 
       if (summary?.trim() &&
           Array.isArray(keywords) && keywords.length > 0 &&

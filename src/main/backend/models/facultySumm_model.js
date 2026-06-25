@@ -159,7 +159,12 @@ function parseSummaryReply(content) {
 // for structured JSON (response_format) instead of a fixed text layout, so we
 // parse JSON rather than regex-scraping prose. The model is configurable via
 // SUMMARY_MODEL (default gemma4:31b).
-export async function generateResearchSummary(fullText, faculty, model = process.env.SUMMARY_MODEL || 'gemma4:31b') {
+export async function generateResearchSummary(
+  fullText,
+  faculty,
+  model = process.env.SUMMARY_MODEL || 'gemma4:31b',
+  timeoutMs = Number(process.env.SUMMARY_TIMEOUT_MS) || 120000,
+) {
   const token = process.env.OLLAMA_API_KEY;
   const url = 'https://llm.grit.ucsb.edu/api/chat/completions';
 
@@ -202,7 +207,7 @@ ${fullText || '(no page text could be retrieved; rely on the fields above)'}`;
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        timeout: 120000 // 120 seconds
+        timeout: timeoutMs // LLM response timeout (default 120s; see --timeout / SUMMARY_TIMEOUT_MS)
       }
     );
 
