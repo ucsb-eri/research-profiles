@@ -1,11 +1,12 @@
 import db from '../config/db_config.js';
 import { DIVISION_ORDER } from '../scraper/divisions.js';
+import { parseName } from '../utils/nameParser.js';
 
 //insert faculty into db
 
 export const insertFaculty = async (faculty) => {
   const {
-    name: name,
+    name: rawName,
     title: title,
     specialization: specialization,
     email: email,
@@ -18,6 +19,19 @@ export const insertFaculty = async (faculty) => {
     profile_url: profile_url = website, // use website as profile URL if not provided
     division: division = null // UCSB division; set by the loader from divisions.js
   } = faculty;
+
+  // Normalize the name into a canonical "First Last" display string + structured
+  // parts. A scraper that already has reliable structured names (e.g. the
+  // education API) can pass first_name/last_name to bypass the heuristic.
+  const parsed = parseName(rawName);
+  const first_name = faculty.first_name ?? parsed.firstName ?? null;
+  const last_name = faculty.last_name ?? parsed.lastName ?? null;
+  // Prefer the normalized display name; fall back to the raw name if parsing
+  // produced nothing (shouldn't happen for non-empty input).
+  const name =
+    (faculty.first_name || faculty.last_name)
+      ? [first_name, last_name].filter(Boolean).join(' ')
+      : (parsed.name || rawName);
 
   // ON CONFLICT with no target catches BOTH unique guards: the email UNIQUE
   // constraint, and the partial unique index on (lower(name), lower(department))
