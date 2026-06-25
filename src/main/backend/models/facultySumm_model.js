@@ -1,7 +1,27 @@
 import db from '../config/db_config.js';
 import axios from 'axios';
+import https from 'https';
 import unfluff from 'unfluff';
 import 'dotenv/config.js'
+
+// Many UCSB department servers (web.ece.ucsb.edu, etc.) serve an incomplete
+// certificate chain — they omit the intermediate CA cert, so Node can't build a
+// path to a trusted root and the fetch fails with UNABLE_TO_VERIFY_LEAF_SIGNATURE
+// ("unable to verify the first certificate"). Browsers hide this by auto-fetching
+// the missing intermediate; Node doesn't. We retry such hosts with verification
+// off (see extractTextFromUrl). Safe here: we only read public, non-sensitive
+// page text and send no credentials, so a MITM could at worst feed us bogus
+// research text. Verification stays ON for every host that works.
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+
+// TLS chain errors worth retrying without verification. These all mean "the
+// cert might be fine but Node couldn't validate the chain", not "the cert is
+// actively wrong" — we deliberately don't retry on hostname mismatch, etc.
+const TLS_CHAIN_ERRORS = new Set([
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',   // server omitted the intermediate cert
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', // issuer not in the local trust store
+  'SELF_SIGNED_CERT_IN_CHAIN',
+]);
 
 export const getFacultyResearchInfo = async (facultyId) => {
   try {
@@ -51,7 +71,15 @@ export const getFacultyResearchInfo = async (facultyId) => {
  */
 export async function extractTextFromUrl(url) {
   try {
-    const response = await axios.get(url, { timeout: 7000 });
+    let response;
+    try {
+      response = await axios.get(url, { timeout: 7000 });
+    } catch (err) {
+      // Retry hosts with a broken/incomplete cert chain without TLS verification.
+      if (!TLS_CHAIN_ERRORS.has(err.code)) throw err;
+      console.warn(`TLS chain unverifiable for ${url} (${err.code}); retrying without verification`);
+      response = await axios.get(url, { timeout: 7000, httpsAgent: insecureAgent });
+    }
     const data = unfluff(response.data);
     return data.text?.trim() || '';
   } catch (err) {
