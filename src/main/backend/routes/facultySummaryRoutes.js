@@ -1,6 +1,6 @@
 import express from 'express';
 import facultySummaryController from '../controllers/facultySummaryController.js';
-import { requireUcsbAuth, requireProfileOwner } from '../middleware/auth.js';
+import { requireUcsbAuth, requireProfileOwnerOrAdmin } from '../middleware/auth.js';
 const router = express.Router();
 
 
@@ -19,11 +19,11 @@ router.get('/broad_keywords/department', facultySummaryController.getBroadKeywor
 router.get('/keyword/:keyword/getId', facultySummaryController.getIdbyKeyword);
 router.get('/id/:id', facultySummaryController.getAllbyID);
 
-// Owner-only edit of the AI-generated content (summary / keywords / broad_keywords)
-router.put('/id/:id', requireUcsbAuth, requireProfileOwner, facultySummaryController.update);
+// Owner-or-admin edit of the AI-generated content (summary / keywords / broad_keywords)
+router.put('/id/:id', requireUcsbAuth, requireProfileOwnerOrAdmin, facultySummaryController.update);
 
-// Owner-only: hand the blurb back to AI (clears the owner-edited flag).
-router.put('/id/:id/reset-to-ai', requireUcsbAuth, requireProfileOwner, facultySummaryController.resetToAI);
+// Owner-or-admin: hand the blurb back to AI (clears the owner-edited flag).
+router.put('/id/:id/reset-to-ai', requireUcsbAuth, requireProfileOwnerOrAdmin, facultySummaryController.resetToAI);
 
 export default router;
 

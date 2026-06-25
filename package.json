@@ -7,6 +7,9 @@
     "data:scrape": "node src/main/backend/scripts/loadFaculty.js",
     "db:dedupe": "node src/main/backend/scripts/dedupeFaculty.js",
     "user:create": "node src/main/backend/scripts/createUser.js",
+    "admin:add": "node src/main/backend/scripts/manageAdmins.js --add",
+    "admin:remove": "node src/main/backend/scripts/manageAdmins.js --remove",
+    "admin:list": "node src/main/backend/scripts/manageAdmins.js --list",
     "data:summaries": "node src/main/backend/scripts/genSummaries.js",
     "eval:summaries": "node src/main/backend/scripts/evalSummaryModels.js",
     "data:load": "npm run data:scrape && npm run data:summaries"

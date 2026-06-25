@@ -1,4 +1,5 @@
 import * as faculty_model from '../models/faculty_model.js';
+import { isAdmin } from '../models/admin_model.js';
 
 // UCSB identity = a verified @ucsb.edu Google Workspace account.
 const UCSB_DOMAIN = 'ucsb.edu';
@@ -45,10 +46,12 @@ export async function requireUcsbAuth(req, res, next) {
   }
 }
 
-// Must run after requireUcsbAuth. Loads the faculty record for :id and confirms
-// the authenticated user owns it (their verified email matches faculty.email).
-// Sets req.faculty for downstream handlers.
-export async function requireProfileOwner(req, res, next) {
+// Must run after requireUcsbAuth. Loads the faculty record for :id and authorizes
+// the edit: the caller must either own the profile (verified email matches
+// faculty.email) OR be a site admin (admins table, migration 009). Admins may
+// edit any profile. Sets req.faculty, and req.isAdmin so handlers can tell which
+// path authorized the request.
+export async function requireProfileOwnerOrAdmin(req, res, next) {
   const id = parseInt(req.params.id, 10);
   if (Number.isNaN(id)) {
     return res.status(400).json({ error: 'Invalid faculty id' });
@@ -59,11 +62,16 @@ export async function requireProfileOwner(req, res, next) {
     if (!faculty) {
       return res.status(404).json({ error: 'Faculty member not found' });
     }
-    if (!faculty.email || faculty.email.toLowerCase() !== req.userEmail) {
+
+    const isOwner = faculty.email && faculty.email.toLowerCase() === req.userEmail;
+    // Only pay for the admin lookup when ownership doesn't already grant access.
+    const admin = isOwner ? false : await isAdmin(req.userEmail);
+    if (!isOwner && !admin) {
       return res.status(403).json({ error: 'You can only edit your own profile' });
     }
 
     req.faculty = faculty;
+    req.isAdmin = admin;
     next();
   } catch (err) {
     console.error('Ownership check failed:', err.message);
