@@ -38,7 +38,7 @@ const REPORT_PATH = strArg('--report');
 const MODEL = process.env.SUMMARY_MODEL || 'gemma4:31b';
 
 // Tally no-text rows by their `cause` field.
-const NO_TEXT_CAUSES = ['no-links-row', 'no-urls', 'extract-empty'];
+const NO_TEXT_CAUSES = ['no-source', 'extract-empty', 'no-faculty-row'];
 function countCauses(rows) {
   const counts = Object.fromEntries(NO_TEXT_CAUSES.map(c => [c, 0]));
   for (const r of rows) if (r.cause in counts) counts[r.cause]++;
@@ -72,20 +72,20 @@ function buildReport(r) {
     `## No research text (${r.noText.length})`,
     'No usable URLs/text to summarize, broken down by cause:',
     '',
-    '| Cause | Count | Recoverable by scraping? |',
+    '| Cause | Count | What it means |',
     '|---|---|---|',
-    `| no-links-row | ${noTextCounts['no-links-row']} | yes — no research-links row exists yet |`,
-    `| no-urls | ${noTextCounts['no-urls']} | yes — links row exists but all URL fields empty |`,
-    `| extract-empty | ${noTextCounts['extract-empty']} | unlikely — URLs exist but yielded <100 chars |`,
+    `| no-source | ${noTextCounts['no-source']} | no URLs and no research-areas/specialization — nothing to use |`,
+    `| extract-empty | ${noTextCounts['extract-empty']} | URLs exist but yielded <100 chars and no structured fields |`,
+    `| no-faculty-row | ${noTextCounts['no-faculty-row']} | faculty id not found (deleted mid-run) |`,
     '',
-    `### no-links-row (${noTextCounts['no-links-row']})`,
-    list(r.noText.filter(x => x.cause === 'no-links-row')),
-    '',
-    `### no-urls (${noTextCounts['no-urls']})`,
-    list(r.noText.filter(x => x.cause === 'no-urls')),
+    `### no-source (${noTextCounts['no-source']})`,
+    list(r.noText.filter(x => x.cause === 'no-source')),
     '',
     `### extract-empty (${noTextCounts['extract-empty']})`,
     list(r.noText.filter(x => x.cause === 'extract-empty')),
+    '',
+    `### no-faculty-row (${noTextCounts['no-faculty-row']})`,
+    list(r.noText.filter(x => x.cause === 'no-faculty-row')),
     '',
     `## Generated (${r.generated.length})`,
     '',
@@ -126,25 +126,28 @@ async function generateAllSummaries() {
       if (ONLY_MISSING && status.has_summary) { skippedExisting++; continue; }
 
       const faculty = await getFacultyResearchInfo(id);
-      // Three distinct reasons a faculty has no text to summarize, tracked
-      // separately so the report shows how many the scraper could recover:
-      //   no-links-row   — no faculty_research_links row at all (inner join
-      //                     returns null); scraping can create one.
-      //   no-urls        — links row exists but every URL field is empty;
-      //                     scraping can fill it.
-      //   extract-empty  — URLs exist but yielded <100 chars of text (dead
-      //                    links, JS-only pages, unparseable PDFs); needs a
-      //                    manual look, re-scraping rarely helps.
-      if (!faculty) { noText.push({ id, name: null, cause: 'no-links-row' }); continue; }
-      if (!faculty.urls?.length) { noText.push({ id, name: faculty.name, cause: 'no-urls' }); continue; }
+      // getFacultyResearchInfo now LEFT JOINs, so null only means the id vanished
+      // mid-run (rare). Reasons a faculty ends up with no text to summarize:
+      //   no-faculty-row — id not found (deleted between the id scan and here).
+      //   no-source      — no URLs at all AND no research_areas/specialization;
+      //                    truly nothing to work with.
+      //   extract-empty  — had URLs but they yielded <100 chars (dead links,
+      //                    JS-only pages, unparseable PDFs) AND no structured
+      //                    fields to fall back on.
+      if (!faculty) { noText.push({ id, name: null, cause: 'no-faculty-row' }); continue; }
 
-      const combinedText = await extractTextsFromUrls(faculty.urls);
-      if (!combinedText || combinedText.length < 100) {
-        noText.push({ id, name: faculty.name, cause: 'extract-empty' }); continue;
+      // Structured fields we already scraped are a usable baseline even when no
+      // page text can be fetched, so they keep a faculty out of "no-text".
+      const hasStructured = Boolean(faculty.research_areas?.trim() || faculty.specialization?.trim());
+      const scrapedText = faculty.urls.length ? await extractTextsFromUrls(faculty.urls) : '';
+
+      if (scrapedText.length < 100 && !hasStructured) {
+        noText.push({ id, name: faculty.name, cause: faculty.urls.length ? 'extract-empty' : 'no-source' });
+        continue;
       }
 
       attempted++;
-      const { summary, keywords, broad_keywords } = await generateResearchSummary(combinedText, faculty);
+      const { summary, keywords, broad_keywords } = await generateResearchSummary(scrapedText, faculty);
 
       if (summary?.trim() &&
           Array.isArray(keywords) && keywords.length > 0 &&
@@ -168,8 +171,8 @@ async function generateAllSummaries() {
     console.log(
       `Done. Generated ${generated.length}, failed ${failed.length}, ` +
       `skipped ${skippedOwner} owner-edited, ${noText.length} no-text ` +
-      `(${nt['no-links-row']} no-links-row, ${nt['no-urls']} no-urls, ` +
-      `${nt['extract-empty']} extract-empty)` +
+      `(${nt['no-source']} no-source, ${nt['extract-empty']} extract-empty, ` +
+      `${nt['no-faculty-row']} no-faculty-row)` +
       (ONLY_MISSING ? `, ${skippedExisting} already-summarized` : '') +
       (stoppedAtLimit ? ` (stopped at limit; last id ${lastId})` : '') + '.'
     );

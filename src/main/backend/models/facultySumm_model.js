@@ -25,12 +25,16 @@ const TLS_CHAIN_ERRORS = new Set([
 
 export const getFacultyResearchInfo = async (facultyId) => {
   try {
+    // LEFT JOIN, not inner: faculty without a faculty_research_links row must
+    // still come through so we can fall back to their profile page + the
+    // structured research_areas/specialization fields we already scraped.
     const res = await db.query(
-      `SELECT 
-        faculty.id, faculty.name, faculty.title, faculty.research_areas, faculty.department,
-        faculty_research_links.cv_url, faculty_research_links.orcid_url, faculty_research_links.google_scholar_url, faculty_research_links.crawled_urls
+      `SELECT
+        faculty.id, faculty.name, faculty.title, faculty.research_areas,
+        faculty.specialization, faculty.department, faculty.profile_url,
+        l.cv_url, l.orcid_url, l.google_scholar_url, l.crawled_urls
        FROM faculty
-       JOIN faculty_research_links ON faculty.id = faculty_research_links.faculty_id
+       LEFT JOIN faculty_research_links l ON faculty.id = l.faculty_id
        WHERE faculty.id = $1`,
       [facultyId]
     );
@@ -39,15 +43,18 @@ export const getFacultyResearchInfo = async (facultyId) => {
 
     const row = res.rows[0];
 
-    // Combine all possible URLs into a flat array + clean nulls
-    const urls = [
+    // Combine all possible URLs into a flat array, dropping nulls and dupes. The
+    // profile page is included as a text source — it usually carries the bio /
+    // research statement and is often the only URL we have.
+    const urls = [...new Set([
+      row.profile_url,
       row.cv_url,
       row.orcid_url,
       row.google_scholar_url,
       ...(Array.isArray(row.crawled_urls)
         ? row.crawled_urls
         : row.crawled_urls?.split(',') ?? [])
-    ].filter(Boolean); 
+    ].filter(Boolean))];
 
     return {
       id: row.id,
@@ -55,7 +62,9 @@ export const getFacultyResearchInfo = async (facultyId) => {
       title: row.title,
       department: row.department,
       research_areas: row.research_areas,
-      urls, 
+      specialization: row.specialization,
+      profile_url: row.profile_url,
+      urls,
     };
   } catch (err) {
     console.error('Error fetching faculty research info:', err.message);
@@ -154,6 +163,13 @@ export async function generateResearchSummary(fullText, faculty, model = process
   const token = process.env.OLLAMA_API_KEY;
   const url = 'https://llm.grit.ucsb.edu/api/chat/completions';
 
+  // High-signal structured fields we already hold. Passed explicitly so the
+  // model uses them even when little/no page text could be scraped.
+  const known = [
+    faculty.research_areas ? `Known research areas: ${faculty.research_areas}` : null,
+    faculty.specialization ? `Specialization: ${faculty.specialization}` : null,
+  ].filter(Boolean).join('\n');
+
   const prompt = `You are an academic research summarizer.
 
 Using the information below about Professor ${faculty.name} (${faculty.title}, ${faculty.department}), produce:
@@ -161,11 +177,14 @@ Using the information below about Professor ${faculty.name} (${faculty.title}, $
 - keywords: 5-8 concise keywords covering their specific research areas and expertise.
 - broad_keywords: a few broader keywords a student might search to find this kind of research.
 
+Base everything ONLY on the information provided below; do not invent facts. If the
+information is sparse, keep the summary shorter rather than speculating.
+
 Respond with ONLY a JSON object of the form:
 {"summary": "...", "keywords": ["..."], "broad_keywords": ["..."]}
-
+${known ? `\n${known}\n` : ''}
 TEXT:
-${fullText}`;
+${fullText || '(no page text could be retrieved; rely on the fields above)'}`;
 
   try {
     const res = await axios.post(

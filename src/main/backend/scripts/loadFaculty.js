@@ -362,9 +362,15 @@ async function main() {
         const faculty_id = await insertFaculty(faculty);
         inserted++;
 
-        if (faculty.website && faculty.website != faculty.profile_url) {
+        // Gather links from the best URL we have. Previously this only ran when
+        // website != profile_url, so faculty whose only URL was their department
+        // profile page got NO links row at all (the bulk of the "no-text" skips).
+        // Fall back to profile_url so every faculty with any URL gets a links row,
+        // and the profile page itself becomes a crawl source.
+        const linkSource = faculty.website || faculty.profile_url;
+        if (linkSource) {
           try {
-            const links = await gatherResearchLinks(faculty.website);
+            const links = await gatherResearchLinks(linkSource);
             await insertFacultyResearchLinks(faculty_id, links);
           } catch (err) {
             console.error(`  Error gathering research links for ${faculty.name}:`, err.message);
