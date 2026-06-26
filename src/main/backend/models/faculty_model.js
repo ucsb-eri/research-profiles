@@ -211,6 +211,7 @@ const EDITABLE_FACULTY_COLUMNS = [
   'phone',
   'profile_url',
   'email',
+  'photo_url',
 ];
 
 // Update the allowlisted fields present in `fields`. Returns the updated row, or

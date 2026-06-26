@@ -1,4 +1,7 @@
+import fs from 'fs/promises';
+import path from 'path';
 import * as faculty_model from '../models/faculty_model.js';
+import { PHOTO_DIR, PHOTO_URL_PATH } from '../config/uploads.js';
 
 // Log the underlying DB/driver error so 500s aren't silent in the journal.
 // `context` identifies the failing handler; pg errors carry code/detail.
@@ -174,6 +177,55 @@ const update = async (req, res) => {
   }
 };
 
+// Base URL the uploaded file will be served from. Prefer an explicit
+// PUBLIC_BASE_URL (correct behind a proxy/CDN); otherwise derive it from the
+// request. `app.set('trust proxy')` keeps protocol/host right behind the proxy.
+const publicBaseUrl = (req) =>
+  (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+
+// Delete a previously-uploaded photo when it's replaced, so old files don't pile
+// up. Only touches files inside our photos dir (URL contains PHOTO_URL_PATH);
+// path.basename strips any directory so a crafted URL can't escape the folder.
+// Best-effort: a missing file is fine.
+async function removeLocalPhoto(photoUrl) {
+  if (!photoUrl || !photoUrl.includes(`${PHOTO_URL_PATH}/`)) return;
+  const base = path.basename(photoUrl.split('?')[0]);
+  if (!base) return;
+  try {
+    await fs.unlink(path.join(PHOTO_DIR, base));
+  } catch {
+    /* already gone — nothing to clean up */
+  }
+}
+
+// Set a faculty member's profile image from an uploaded file. Auth + ownership
+// (or admin) are enforced by middleware; the file is validated + written to disk
+// by uploadFacultyPhoto before this runs. We store the public URL in photo_url
+// and remove the prior uploaded file if there was one.
+const uploadPhoto = async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image file provided (form field: photo)' });
+  }
+  try {
+    const url = `${publicBaseUrl(req)}${PHOTO_URL_PATH}/${req.file.filename}`;
+    const oldUrl = req.faculty?.photo_url; // loaded by requireProfileOwnerOrAdmin
+    const updated = await faculty_model.updateFaculty(id, { photo_url: url });
+    if (!updated) {
+      // Row disappeared between the ownership check and here — drop the orphan file.
+      await removeLocalPhoto(url);
+      return res.status(404).json({ error: 'Faculty member not found' });
+    }
+    if (oldUrl && oldUrl !== url) await removeLocalPhoto(oldUrl);
+    res.json(updated);
+  } catch (error) {
+    logDbError(`Failed to set photo for faculty ${id}`, error);
+    // Don't leave the just-written file orphaned if the DB update threw.
+    await removeLocalPhoto(`${PHOTO_URL_PATH}/${req.file.filename}`);
+    res.status(500).json({ error: 'Failed to update profile image' });
+  }
+};
+
 export default {
   getAll,
   getById,
@@ -185,5 +237,6 @@ export default {
   getByTopic,
   getAllbyDeptTopic,
   search,
-  update
+  update,
+  uploadPhoto
 };

@@ -185,3 +185,6 @@ node_modules/
 # Backend
 /backend/node_modules/
 /backend/dist/
+
+# User-uploaded files (faculty photos) — runtime data, not source
+src/main/backend/uploads/
