@@ -112,34 +112,6 @@ const getByDepartment = async (req, res) => {
   }
 };
 
-const getByTopic = async (req, res) => {
-  const { topic } = req.query;
-  try {
-    const facultyMembers = await faculty_model.getByTopic(topic);
-    if (facultyMembers.length === 0) {
-      return res.status(404).json({ error: 'No faculty members found for this topic' });
-    }
-    res.json(facultyMembers);
-  } catch (error) {
-    logDbError('Failed to fetch faculty members by topic', error);
-    res.status(500).json({ error: 'Failed to fetch faculty members by topic' });
-  }
-};
-
-const getAllbyDeptTopic = async (req, res) => {
-  const { department, topic } = req.query;
-  try {
-    const facultyMembers = await faculty_model.getAllbyDeptTopic(department, topic);
-    if (facultyMembers.length === 0) {
-      return res.status(404).json({ error: 'No faculty members found for this criteria' });
-    }
-    res.json(facultyMembers);
-  } catch (error) {
-    logDbError('Failed to fetch faculty members by department and topic', error);
-    res.status(500).json({ error: 'Failed to fetch faculty members by department and topic' });
-  }
-};
-
 const search = async (req, res) => {
   const { q, limit, offset } = req.query;
   if (!q || !q.trim()) {
@@ -234,8 +206,6 @@ export default {
   getDivisions,
   getByDivision,
   getByDepartment,
-  getByTopic,
-  getAllbyDeptTopic,
   search,
   update,
   uploadPhoto

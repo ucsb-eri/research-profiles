@@ -173,33 +173,6 @@ export const getDivisionsGrouped = async () => {
 };
 
 
-export const getByTopic = async (topic) => {
-  const res = await db.query(
-    `SELECT * FROM faculty WHERE topics ILIKE $1 ${ORDER_BY_LAST_NAME}`,
-    [`%${topic}%`]
-  );
-  return res.rows;
-};
-
-export const getAllbyDeptTopic = async (department, topic) => {
-  let query = 'SELECT * FROM faculty WHERE 1=1';
-  const params = [];
-
-  if (department) {
-    params.push(department);
-    query += ` AND LOWER(department) = LOWER($${params.length})`;
-  }
-
-  if (topic) {
-    params.push(`%${topic}%`);
-    query += ` AND LOWER(topics) LIKE LOWER($${params.length})`;
-  }
-
-  query += ` ${ORDER_BY_LAST_NAME}`;
-  const res = await db.query(query, params);
-  return res.rows;
-};
-
 // Columns an owner is allowed to edit on their own profile. Anything else in the
 // request body is ignored, so a forged field can't touch id/email-uniqueness rules
 // it shouldn't (email is included intentionally so owners can correct it).
@@ -231,9 +204,15 @@ export const updateFaculty = async (id, fields = {}) => {
   return res.rows[0];
 };
 
-// Minimum relevance for a row to count as a search match. Shared by
-// searchFaculty and countSearchFaculty so the page and its total stay in sync.
-const SEARCH_THRESHOLD = 0.15;
+// Minimum relevance (0–1) for a row to count as a search match. Higher is
+// stricter: fewer, more-relevant results. 0.15 let in a lot of weak partial
+// matches, so the default is 0.3; tune via the SEARCH_THRESHOLD env var without
+// a code change. Shared by searchFaculty and countSearchFaculty so the page and
+// its total stay in sync.
+const SEARCH_THRESHOLD = (() => {
+  const v = Number(process.env.SEARCH_THRESHOLD);
+  return Number.isFinite(v) && v > 0 ? v : 0.3;
+})();
 
 // The scoring CTE used by both search and its count. $1 is the query string;
 // each row gets a `rank` = best pg_trgm similarity across its searchable fields.

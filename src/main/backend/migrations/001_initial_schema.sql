@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS faculty (
                                        -- which the frontend parses back into an array
   department     TEXT,
   profile_url    TEXT,
-  topics         TEXT                  -- queried by /topic search; not populated by current scrapers
+  topics         TEXT                  -- fuzzy-matched by /search ranking; not populated by current scrapers
 );
 
 CREATE TABLE IF NOT EXISTS faculty_summaries (

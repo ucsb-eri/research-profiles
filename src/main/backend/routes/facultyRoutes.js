@@ -16,8 +16,6 @@ router.get('/alldepartments', facultyController.getDepartments);
 router.get('/alldivisions', facultyController.getDivisions);
 router.get('/division', facultyController.getByDivision);
 router.get('/department', facultyController.getByDepartment);
-router.get('/topic', facultyController.getByTopic);
-router.get('/dept-topic', facultyController.getAllbyDeptTopic);
 
 
 //moved to bott otherwise it captures all
