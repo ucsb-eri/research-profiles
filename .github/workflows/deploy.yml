@@ -28,13 +28,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           PORT: ${{ vars.PORT }}
+          SEARCH_THRESHOLD: ${{ vars.SEARCH_THRESHOLD }}
         with:
           host: ${{ vars.HOST }}
           username: ${{ vars.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           # Forward the values from the runner into the remote shell so the
           # heredoc below can write them. Secrets are never printed to the log.
-          envs: DATABASE_URL,OLLAMA_API_KEY,PORT
+          envs: DATABASE_URL,OLLAMA_API_KEY,PORT, SEARCH_THRESHOLD
           script: |
             cd /home/research-profiles/production/research-profiles-api
             umask 077
@@ -42,6 +43,7 @@ jobs:
               printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
               printf 'OLLAMA_API_KEY=%s\n' "$OLLAMA_API_KEY"
               printf 'PORT=%s\n' "${PORT:-3001}"
+              printf 'SEARCH_THRESHOLD=%s\n' "${SEARCH_THRESHOLD:-0.3}"
             } > .env
             chmod 600 .env
       - name: install dependencies
